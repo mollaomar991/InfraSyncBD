@@ -1,0 +1,33 @@
+.verificationTable {
+  min-width: 1040px;
+}
+
+.verificationTable th:nth-child(5),
+.verificationTable td:nth-child(5) {
+  min-width: 112px;
+  white-space: nowrap;
+}
+
+.documentCount {
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  color: #c2410c;
+  background: #fff7ed;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
+  font-size: 0.66rem;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.documentCountIcon {
+  color: var(--road-orange);
+  font-size: 0.74rem;
+  line-height: 1;
+}
