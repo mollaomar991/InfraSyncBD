@@ -4,3 +4,5 @@ dist
 .DS_Store
 *.local
 *.tsbuildinfo
+.env
+server/node_modules
