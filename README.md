@@ -15,13 +15,10 @@ This project was extracted from the supplied InfraSync BD frontend and intention
 - GIS project map
 - Project locations, status, budget and progress display
 
-## Removed from this version
-Dashboards, departments management, conflict alerts, coordination, approvals, contractor management, complaints, progress module, inspections, road restoration, reports and notifications.
+
 
 ## Run
 ```bash
 npm install
 npm run dev
 ```
-
-Demo password: `demo123`
