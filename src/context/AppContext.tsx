@@ -124,7 +124,31 @@ export function AppProvider({ children }: AppProviderProps) {
   async function fetchProjects() {
     try {
       const res = await api.get('/projects');
-      if (res.data.success) setProjects(res.data.data);
+      if (res.data.success) {
+        // Map database fields to frontend Project interface
+        const mapped = res.data.data.map((p: any) => ({
+          id: p.project_code || `PRJ-${p.project_id}`,
+          name: p.project_name,
+          type: p.project_type || 'Road Construction',
+          department: p.department_name || 'Unknown',
+          contractor: 'Not assigned',
+          area: p.area_name || 'N/A',
+          road: p.road_name || 'N/A',
+          latitude: p.latitude || 23.8103,
+          longitude: p.longitude || 90.4125,
+          startDate: p.start_date || '',
+          endDate: p.target_completion_date || '',
+          budget: p.budget || 0,
+          progress: p.progress_percentage || 0,
+          plannedProgress: 0,
+          status: p.status || 'draft',
+          roadStatus: 'Open',
+          conflictLevel: 'None',
+          approvalStatus: p.status || 'draft',
+          description: p.description || '',
+        }));
+        setProjects(mapped);
+      }
     } catch (e) {
       console.error(e);
     }
