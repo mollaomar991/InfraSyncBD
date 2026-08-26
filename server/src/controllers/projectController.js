@@ -7,15 +7,16 @@ import pool from '../config/db.js';
 
 // --- 1. Create a new project (POST /api/projects) ---
 export const createProject = async (req, res) => {
+    // Read camelCase fields sent from React frontend
     const {
-        project_name,
-        project_type,
+        name: project_name,
+        type: project_type,
         description,
         budget,
-        start_date,
-        target_completion_date,
-        road_name,
-        area_name,
+        startDate: start_date,
+        endDate: target_completion_date,
+        road: road_name,
+        area: area_name,
         latitude,
         longitude,
         priority
@@ -38,6 +39,16 @@ export const createProject = async (req, res) => {
         // Generate a unique project code
         const projectCode = `PRJ-${Date.now().toString().slice(-8)}`;
 
+        // Format dates for MySQL (YYYY-MM-DD)
+        const formatForMySQL = (dateString) => {
+            if (!dateString) return null;
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0];
+        };
+
+        const mysqlStartDate = formatForMySQL(start_date);
+        const mysqlEndDate = formatForMySQL(target_completion_date);
+
         // Start transaction - save data in both tables simultaneously
         const connection = await pool.getConnection();
         try {
@@ -48,7 +59,7 @@ export const createProject = async (req, res) => {
                 `INSERT INTO projects 
                 (project_code, project_name, project_type, description, department_id, created_by_officer_id, budget, start_date, target_completion_date, status, priority) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)`,
-                [projectCode, project_name, project_type, description, departmentId, officerId, budget, start_date, target_completion_date, priority || 'medium']
+                [projectCode, project_name, project_type, description, departmentId, officerId, budget, mysqlStartDate, mysqlEndDate, priority || 'medium']
             );
 
             const projectId = projectResult.insertId;
