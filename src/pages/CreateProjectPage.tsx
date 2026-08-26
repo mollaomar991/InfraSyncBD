@@ -4,6 +4,7 @@ import LoadingButton from '../components/LoadingButton';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import { useApp } from '../context/AppContext';
+import { MapContainer, TileLayer, Polyline, Marker, useMapEvents, useMap, CircleMarker } from 'react-leaflet';
 import type { ProjectInput } from '../types';
 
 const initialForm: ProjectInput = {
@@ -15,14 +16,31 @@ const initialForm: ProjectInput = {
   endDate: '',
   road: '',
   area: '',
-  latitude: 23.8103,
-  longitude: 90.4125,
+  coordinates: [],
 };
+
+// Map click listener component
+function MapClickHandler({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
+  useMapEvents({
+    click(e) {
+      onAddPoint([e.latlng.lat, e.latlng.lng]);
+    },
+  });
+  return null;
+}
+
+// Map center updater component
+function MapCenterUpdater({ center }: { center: [number, number] }) {
+  const map = useMap();
+  map.setView(center, map.getZoom());
+  return null;
+}
 
 function CreateProjectPage() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mapCenter, setMapCenter] = useState<[number, number]>([23.8103, 90.4125]);
   const { addProject } = useApp();
   const navigate = useNavigate();
 
@@ -30,7 +48,7 @@ function CreateProjectPage() {
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) {
     const { name, value } = event.target;
-    const numericFields = ['budget', 'latitude', 'longitude'];
+    const numericFields = ['budget'];
 
     setForm((currentForm) => ({
       ...currentForm,
@@ -38,9 +56,25 @@ function CreateProjectPage() {
     }));
   }
 
+  function handleAddPoint(latlng: [number, number]) {
+    setForm((current) => ({
+      ...current,
+      coordinates: [...current.coordinates, latlng],
+    }));
+  }
+
+  function handleClearCoordinates() {
+    setForm((current) => ({ ...current, coordinates: [] }));
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+
+    if (form.coordinates.length === 0) {
+      setError('Please click on the map to draw the project location.');
+      return;
+    }
 
     if (new Date(form.endDate) < new Date(form.startDate)) {
       setError('The expected completion date cannot be before the start date.');
@@ -87,7 +121,7 @@ function CreateProjectPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="content-grid content-grid-2-1 form-layout">
+      <form onSubmit={handleSubmit} className="page-stack form-layout">
         <Panel title="Project information" subtitle="Fields required by the project module">
           <div className="form-grid">
             <label className="form-field full-field">
@@ -198,36 +232,67 @@ function CreateProjectPage() {
         <div className="page-stack compact-stack">
           <Panel title="GIS coordinates" subtitle="Dhaka map location for conflict checking">
             <div className="form-grid single-column">
-              <label className="form-field">
-                <span>Latitude</span>
-                <input
-                  type="number"
-                  step="0.0001"
-                  name="latitude"
-                  value={form.latitude}
-                  onChange={handleChange}
-                  required
-                />
-              </label>
-              <label className="form-field">
-                <span>Longitude</span>
-                <input
-                  type="number"
-                  step="0.0001"
-                  name="longitude"
-                  value={form.longitude}
-                  onChange={handleChange}
-                  required
-                />
-              </label>
-              <div className="coordinate-preview">
-                <span>Selected point</span>
-                <strong>
-                  {form.latitude.toFixed(4)}, {form.longitude.toFixed(4)}
-                </strong>
-                <small>
-                  Open the GIS Map after saving to verify the project marker.
-                </small>
+              
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <label className="form-field" style={{ flex: 1 }}>
+                  <span>Search Latitude</span>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={mapCenter[0]}
+                    onChange={(e) => setMapCenter([Number(e.target.value), mapCenter[1]])}
+                  />
+                </label>
+                <label className="form-field" style={{ flex: 1 }}>
+                  <span>Search Longitude</span>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={mapCenter[1]}
+                    onChange={(e) => setMapCenter([mapCenter[0], Number(e.target.value)])}
+                  />
+                </label>
+              </div>
+
+              <div style={{ height: '550px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid #334155' }}>
+                <MapContainer center={mapCenter} zoom={12} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
+                  <MapCenterUpdater center={mapCenter} />
+                  <TileLayer
+                    attribution='&copy; Google Maps'
+                    url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                    maxZoom={21}
+                  />
+                  <MapClickHandler onAddPoint={handleAddPoint} />
+                  
+                  {/* Visual indicator for the search location */}
+                  <CircleMarker 
+                    center={mapCenter} 
+                    radius={8} 
+                    pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.5, weight: 2 }} 
+                  />
+
+                  {form.coordinates.length > 0 && (
+                    <>
+                      <Polyline positions={form.coordinates} pathOptions={{ color: '#ef4444', weight: 4 }} />
+                      {form.coordinates.map((coord, idx) => (
+                        <Marker key={idx} position={coord} />
+                      ))}
+                    </>
+                  )}
+                </MapContainer>
+              </div>
+
+              <div className="coordinate-preview" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span>Points selected</span>
+                  <strong>{form.coordinates.length} points</strong>
+                  <small>Click on the map to draw the road line.</small>
+                </div>
+                {form.coordinates.length > 0 && (
+                  <button type="button" onClick={handleClearCoordinates} style={{ padding: '4px 12px', background: '#334155', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    Clear Map
+                  </button>
+                )}
               </div>
             </div>
           </Panel>

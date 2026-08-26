@@ -57,6 +57,8 @@ export interface Project {
   road: string;
   latitude: number;
   longitude: number;
+  geometryType?: 'point' | 'polyline' | 'polygon';
+  coordinates?: [number, number][];
   startDate: string;
   endDate: string;
   budget: number;
@@ -115,6 +117,5 @@ export interface ProjectInput {
   endDate: string;
   road: string;
   area: string;
-  latitude: number;
-  longitude: number;
+  coordinates: [number, number][];
 }

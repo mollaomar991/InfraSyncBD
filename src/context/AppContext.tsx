@@ -136,6 +136,8 @@ export function AppProvider({ children }: AppProviderProps) {
           road: p.road_name || 'N/A',
           latitude: p.latitude || 23.8103,
           longitude: p.longitude || 90.4125,
+          geometryType: p.geometry_type || 'point',
+          coordinates: p.coordinates_json ? (typeof p.coordinates_json === 'string' ? JSON.parse(p.coordinates_json) : p.coordinates_json) : undefined,
           startDate: p.start_date || '',
           endDate: p.target_completion_date || '',
           budget: p.budget || 0,

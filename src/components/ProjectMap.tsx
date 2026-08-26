@@ -3,6 +3,7 @@ import {
   MapContainer,
   Popup,
   TileLayer,
+  Polyline
 } from 'react-leaflet';
 import type { Project } from '../types';
 import ProgressBar from './ProgressBar';
@@ -50,22 +51,16 @@ function ProjectMap({
         className={heightClass}
       >
         <TileLayer
-          attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          attribution='&copy; Google Maps'
+          url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+          maxZoom={21}
         />
 
-        {projects.map((project) => (
-          <CircleMarker
-            key={project.id}
-            center={[project.latitude, project.longitude]}
-            radius={showConflicts && project.conflictLevel === 'High' ? 12 : 9}
-            pathOptions={{
-              color: '#ffffff',
-              weight: 3,
-              fillColor: projectColor(project.type),
-              fillOpacity: 0.95,
-            }}
-          >
+        {projects.map((project) => {
+          const isPolyline = project.geometryType === 'polyline' && project.coordinates && project.coordinates.length > 1;
+          const color = projectColor(project.type);
+          
+          const popupContent = (
             <Popup minWidth={260}>
               <div className="map-popup">
                 <span className="map-popup-id">{project.id}</span>
@@ -82,8 +77,40 @@ function ProjectMap({
                 <ProgressBar value={project.progress} compact />
               </div>
             </Popup>
-          </CircleMarker>
-        ))}
+          );
+
+          if (isPolyline) {
+            return (
+              <Polyline
+                key={project.id}
+                positions={project.coordinates!}
+                pathOptions={{
+                  color: color,
+                  weight: 5,
+                  opacity: 0.9,
+                }}
+              >
+                {popupContent}
+              </Polyline>
+            );
+          }
+
+          return (
+            <CircleMarker
+              key={project.id}
+              center={[project.latitude, project.longitude]}
+              radius={showConflicts && project.conflictLevel === 'High' ? 12 : 9}
+              pathOptions={{
+                color: '#ffffff',
+                weight: 3,
+                fillColor: color,
+                fillOpacity: 0.95,
+              }}
+            >
+              {popupContent}
+            </CircleMarker>
+          );
+        })}
       </MapContainer>
 
       <div className={styles.legend}>

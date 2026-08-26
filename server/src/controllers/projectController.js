@@ -17,8 +17,7 @@ export const createProject = async (req, res) => {
         endDate: target_completion_date,
         road: road_name,
         area: area_name,
-        latitude,
-        longitude,
+        coordinates,
         priority
     } = req.body;
 
@@ -65,13 +64,17 @@ export const createProject = async (req, res) => {
             const projectId = projectResult.insertId;
 
             // Step 2: Insert GIS data into project_locations table
-            if (latitude && longitude) {
-                const coordinatesJson = JSON.stringify({ lat: latitude, lng: longitude });
+            if (coordinates && coordinates.length > 0) {
+                const geometryType = coordinates.length > 1 ? 'polyline' : 'point';
+                const coordinatesJson = JSON.stringify(coordinates);
+                // Use the first coordinate as the main anchor for the NOT NULL columns
+                const [latitude, longitude] = coordinates[0];
+                
                 await connection.query(
                     `INSERT INTO project_locations 
                     (project_id, road_name, area_name, latitude, longitude, geometry_type, coordinates_json) 
-                    VALUES (?, ?, ?, ?, ?, 'point', ?)`,
-                    [projectId, road_name || 'N/A', area_name || 'N/A', latitude, longitude, coordinatesJson]
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [projectId, road_name || 'N/A', area_name || 'N/A', latitude, longitude, geometryType, coordinatesJson]
                 );
             }
 
@@ -99,7 +102,7 @@ export const getProjects = async (req, res) => {
     try {
         const [projects] = await pool.query(`
             SELECT p.*, 
-                   pl.road_name, pl.area_name, pl.latitude, pl.longitude,
+                   pl.road_name, pl.area_name, pl.latitude, pl.longitude, pl.geometry_type, pl.coordinates_json,
                    d.department_name, 
                    u.full_name as officer_name
             FROM projects p
@@ -123,7 +126,7 @@ export const getProjectById = async (req, res) => {
     try {
         const [projects] = await pool.query(`
             SELECT p.*, 
-                   pl.road_name, pl.area_name, pl.latitude, pl.longitude,
+                   pl.road_name, pl.area_name, pl.latitude, pl.longitude, pl.geometry_type, pl.coordinates_json,
                    d.department_name, 
                    u.full_name as officer_name
             FROM projects p
