@@ -74,9 +74,21 @@ All test accounts use the password: **`admin123`**
 | Citizen             | `rahim@citizen.com`      | Active  |
 
 
-## Module 2 - Project Management / GIS
-- Project list / project monitoring
-- Create project (Department Officer)
-- GIS project map
-- Project locations, status, budget and progress display
+## Module 2 Completed Features
+- Project list and project monitoring dashboard
+- Create project form with interactive GIS drawing tool
+- GIS project map with Google Hybrid satellite view
+- Real-time display of project locations, budget, and progress
 
+### Database Architecture (MySQL)
+
+- Integrated `projects` and `project_locations` tables to securely store project data.
+- Handled frontend camelCase to backend snake_case mapping and date formatting.
+- Supported `geometry_type` (point, polyline) and JSON coordinate arrays for spatial data.
+
+### Backend API (Node.js & Express)
+
+- **Project API (`/api/projects`)**:
+  - `POST /`: Creates a new infrastructure project and saves polyline/point GIS coordinates via MySQL transactions.
+  - `GET /`: Fetches all non-archived projects along with their GIS spatial coordinates and department details.
+  - `GET /:id`: Fetches details of a specific project by ID.
