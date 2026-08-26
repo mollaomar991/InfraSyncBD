@@ -6,6 +6,7 @@ import cors from 'cors';
 
 import authRoutes from './src/routes/authRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
+import projectRoutes from './src/routes/projectRoutes.js';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/projects', projectRoutes);
 // Public departments route for registration form
 app.use('/api/departments', async (req, res) => {
     try {
