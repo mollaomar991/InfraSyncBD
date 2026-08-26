@@ -66,6 +66,7 @@ export function AppProvider({ children }: AppProviderProps) {
     // Initial fetch
     fetchMe();
     fetchDepartments();
+    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -120,6 +121,15 @@ export function AppProvider({ children }: AppProviderProps) {
     }
   }
 
+  async function fetchProjects() {
+    try {
+      const res = await api.get('/projects');
+      if (res.data.success) setProjects(res.data.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   function showToast(
     message: string,
     type: ToastMessage['type'] = 'success',
@@ -166,22 +176,18 @@ export function AppProvider({ children }: AppProviderProps) {
   }
 
   async function addProject(input: ProjectInput): Promise<Project> {
-    // Project integration to be done in Module 2 API
-    const project: Project = {
-      id: `PRJ-${Date.now().toString().slice(-6)}`,
-      ...input,
-      department: currentUser?.organization || 'Road Department',
-      contractor: 'Not assigned',
-      progress: 0,
-      plannedProgress: 0,
-      status: 'Draft',
-      roadStatus: 'Open',
-      conflictLevel: 'None',
-      approvalStatus: 'Not submitted',
-    };
-    setProjects([project, ...projects]);
-    showToast('Project saved (Mock Data for now)');
-    return project;
+    try {
+      const res = await api.post('/projects', input);
+      if (res.data.success) {
+        fetchProjects();
+        showToast('Project created successfully!', 'success');
+        return res.data.data;
+      }
+      throw new Error('Failed to create project');
+    } catch (error: any) {
+      showToast(error.response?.data?.message || 'Failed to create project', 'error');
+      throw error;
+    }
   }
 
   async function updateUserStatus(userId: string, status: AccountStatus) {
