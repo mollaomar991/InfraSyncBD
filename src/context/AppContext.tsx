@@ -5,13 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-
-import {
-  departments as initialDepartments,
-  projects as initialProjects,
-  registrations as initialRegistrations,
-  users as initialUsers,
-} from '../data/mockData';
+import api from '../api/axiosClient';
 import type {
   AccountStatus,
   Department,
@@ -56,66 +50,75 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  currentUser: 'infrasync.two-modules.currentUser',
-  users: 'infrasync.two-modules.users',
-  projects: 'infrasync.two-modules.projects',
-  registrations: 'infrasync.two-modules.registrations',
-};
-
-function readStorage<T>(key: string, fallback: T): T {
-  try {
-    const savedValue = localStorage.getItem(key);
-    return savedValue ? (JSON.parse(savedValue) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 interface AppProviderProps {
   children: ReactNode;
 }
 
 export function AppProvider({ children }: AppProviderProps) {
-  const [currentUser, setCurrentUser] = useState<User | null>(() =>
-    readStorage<User | null>(STORAGE_KEYS.currentUser, null),
-  );
-  const [users, setUsers] = useState<User[]>(() =>
-    readStorage(STORAGE_KEYS.users, initialUsers),
-  );
-  const [projects, setProjects] = useState<Project[]>(() =>
-    readStorage(STORAGE_KEYS.projects, initialProjects),
-  );
-  const [registrations, setRegistrations] = useState<Registration[]>(() =>
-    readStorage(STORAGE_KEYS.registrations, initialRegistrations),
-  );
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-  }, [users]);
+    // Initial fetch
+    fetchMe();
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.projects, JSON.stringify(projects));
-  }, [projects]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEYS.registrations,
-      JSON.stringify(registrations),
-    );
-  }, [registrations]);
-
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(
-        STORAGE_KEYS.currentUser,
-        JSON.stringify(currentUser),
-      );
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.currentUser);
+    if (currentUser?.role === 'super_admin') {
+      fetchUsers();
+      fetchPendingVerifications();
     }
   }, [currentUser]);
+
+  async function fetchMe() {
+    const token = localStorage.getItem('infrasync_token');
+    if (!token) return;
+    try {
+      const res = await api.get('/auth/me');
+      if (res.data.success) setCurrentUser(res.data.user);
+    } catch (e) {
+      console.error(e);
+      localStorage.removeItem('infrasync_token');
+    }
+  }
+
+  async function fetchDepartments() {
+    try {
+      const res = await api.get('/departments');
+      if (res.data.success) {
+        setDepartments(res.data.data.map((d: any) => ({
+          id: d.department_id.toString(),
+          name: d.department_name,
+          type: d.department_type,
+        })));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchUsers() {
+    try {
+      const res = await api.get('/admin/users');
+      if (res.data.success) setUsers(res.data.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchPendingVerifications() {
+    try {
+      const res = await api.get('/admin/pending-verifications');
+      if (res.data.success) setRegistrations(res.data.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   function showToast(
     message: string,
@@ -131,105 +134,39 @@ export function AppProvider({ children }: AppProviderProps) {
   }
 
   async function login(email: string, password: string): Promise<LoginResult> {
-    const matchingUser = users.find(
-      (user) => user.email.toLowerCase() === email.trim().toLowerCase(),
-    );
-
-    if (!matchingUser || matchingUser.password !== password) {
-      return { success: false, message: 'The email or password is incorrect.' };
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      if (res.data.success) {
+        localStorage.setItem('infrasync_token', res.data.token);
+        setCurrentUser(res.data.user);
+        return { success: true, message: 'Login successful.', user: res.data.user };
+      }
+      return { success: false, message: 'Login failed' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Login failed' };
     }
-
-    if (matchingUser.accountStatus !== 'Active') {
-      return {
-        success: false,
-        message: `This account is currently ${matchingUser.accountStatus}.`,
-      };
-    }
-
-    setCurrentUser(matchingUser);
-    return { success: true, message: 'Login successful.', user: matchingUser };
   }
 
   function logout() {
+    localStorage.removeItem('infrasync_token');
     setCurrentUser(null);
     showToast('You have been signed out.', 'info');
   }
 
   async function register(input: RegistrationInput): Promise<RegisterResult> {
-    const normalizedEmail = input.email.trim().toLowerCase();
-    const emailExists = users.some(
-      (user) => user.email.toLowerCase() === normalizedEmail,
-    );
-
-    if (emailExists) {
-      return { success: false, message: 'An account with this email already exists.' };
+    try {
+      const res = await api.post('/auth/register', input);
+      if (res.data.success) {
+        return { success: true, message: res.data.message, status: res.data.status };
+      }
+      return { success: false, message: 'Registration failed' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Registration failed' };
     }
-
-    const isCitizen = input.role === 'citizen';
-    const isSuperAdmin = input.role === 'super_admin';
-    const requiresVerification =
-      input.role === 'department_officer' || input.role === 'contractor';
-    const accountStatus: AccountStatus = requiresVerification
-      ? 'Pending Verification'
-      : 'Active';
-    const organization =
-      input.role === 'department_officer'
-        ? input.department || 'Unassigned Department'
-        : input.role === 'contractor'
-          ? input.companyName || 'Contractor Company'
-          : isSuperAdmin
-            ? 'InfraSync BD Administration'
-            : 'Public User';
-
-    const newUser: User = {
-      id: `USR-${Date.now()}`,
-      name: input.name,
-      email: normalizedEmail,
-      password: input.password,
-      phone: input.phone,
-      role: input.role,
-      organization,
-      accountStatus,
-    };
-
-    setUsers((currentUsers) => [...currentUsers, newUser]);
-
-    if (requiresVerification) {
-      const newRegistration: Registration = {
-        id: `REG-${Date.now()}`,
-        role:
-          input.role === 'department_officer'
-            ? 'Department Officer'
-            : 'Contractor',
-        name: input.name,
-        email: normalizedEmail,
-        organization,
-        designation:
-          input.role === 'department_officer'
-            ? input.designation || 'Department Officer'
-            : 'Contractor Company',
-        submittedDate: new Date().toISOString().slice(0, 10),
-        documentCount: input.role === 'department_officer' ? 3 : 4,
-        status: 'Pending Verification',
-      };
-      setRegistrations((currentRegistrations) => [
-        newRegistration,
-        ...currentRegistrations,
-      ]);
-    }
-
-    return {
-      success: true,
-      message: isSuperAdmin
-        ? 'Your Super Admin account is active. You can sign in now.'
-        : isCitizen
-          ? 'Your citizen account is active. You can sign in now.'
-          : 'Registration submitted. Wait for Super Admin verification.',
-      status: accountStatus,
-    };
   }
 
   async function addProject(input: ProjectInput): Promise<Project> {
+    // Project integration to be done in Module 2 API
     const project: Project = {
       id: `PRJ-${Date.now().toString().slice(-6)}`,
       ...input,
@@ -242,52 +179,40 @@ export function AppProvider({ children }: AppProviderProps) {
       conflictLevel: 'None',
       approvalStatus: 'Not submitted',
     };
-
-    setProjects((currentProjects) => [project, ...currentProjects]);
-    showToast('Project saved as a draft.');
+    setProjects([project, ...projects]);
+    showToast('Project saved (Mock Data for now)');
     return project;
   }
 
-  function updateUserStatus(userId: string, status: AccountStatus) {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === userId ? { ...user, accountStatus: status } : user,
-      ),
-    );
-    showToast(`User account changed to ${status}.`, 'info');
+  async function updateUserStatus(userId: string, status: AccountStatus) {
+    try {
+      await api.put(`/admin/users/${userId}/status`, { status });
+      fetchUsers();
+      showToast(`User account changed to ${status}.`, 'info');
+    } catch (error) {
+      showToast('Error updating status', 'error');
+    }
   }
 
   async function updateRegistrationStatus(
     registrationId: string,
     status: AccountStatus,
   ): Promise<void> {
-    const registration = registrations.find(
-      (item) => item.id === registrationId,
-    );
-
-    setRegistrations((currentRegistrations) =>
-      currentRegistrations.map((item) =>
-        item.id === registrationId ? { ...item, status } : item,
-      ),
-    );
-
-    if (registration) {
-      setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          user.email === registration.email
-            ? { ...user, accountStatus: status }
-            : user,
-        ),
-      );
+    try {
+      const dbStatus = status === 'Active' ? 'active' : 'rejected';
+      await api.put(`/admin/verify-user/${registrationId}`, { status: dbStatus });
+      fetchPendingVerifications();
+      fetchUsers();
+      showToast(`Registration status changed to ${status}.`, 'info');
+    } catch (error) {
+      showToast('Error verifying user', 'error');
     }
-
-    showToast(`Registration status changed to ${status}.`, 'info');
   }
 
   const contextValue: AppContextValue = {
     currentUser,
     users,
-    departments: initialDepartments,
+    departments,
     projects,
     registrations,
     toast,

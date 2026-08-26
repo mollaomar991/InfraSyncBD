@@ -42,7 +42,7 @@ function LoginPage() {
     <div className={styles.screen}>
       <section className={styles.showcase}>
         <div className={styles.brand}>
-          <div className={styles.brandMark}>I</div>
+          <img src="/InfraSync.png" alt="InfraSync Logo" style={{ height: '54px', width: 'auto' }} />
           <div>
             <strong>
               InfraSync <span>BD</span>
