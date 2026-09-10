@@ -4,7 +4,6 @@ import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 import type { AccountStatus } from '../types';
 import { roleLabel } from '../utils';
-import styles from './UsersPage.module.css';
 
 function UsersPage() {
   const [search, setSearch] = useState('');
@@ -31,17 +30,17 @@ function UsersPage() {
       <section className="filter-toolbar page-enter">
         <label className="search-field"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search user, email or organization..." /></label>
         <label className="filter-select"><span>Role</span><select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}><option>All</option><option value="super_admin">Super Admin</option><option value="department_officer">Department Officer</option><option value="contractor">Contractor</option><option value="citizen">Citizen</option></select></label>
-        <div className={`filter-summary ${styles.filterSummary}`}><strong>{visibleUsers.length}</strong><span>users found</span></div>
+        <div className="filter-summary"><strong>{visibleUsers.length}</strong><span>users found</span></div>
       </section>
 
       <section className="content-card page-enter">
         <div className="table-responsive">
-          <table className={`data-table user-table ${styles.userTable}`}>
+          <table className="data-table user-table">
             <thead><tr><th>User</th><th>Role</th><th>Organization</th><th>Contact</th><th>Status</th><th>Access action</th></tr></thead>
             <tbody>
               {visibleUsers.map((user) => (
                 <tr key={user.id}>
-                  <td><div className={`user-cell ${styles.userCell}`}><div className={styles.userAvatar}>{user.name.split(' ').map((part) => part[0]).join('').slice(0, 2)}</div><div className={styles.userInfo}><strong>{user.name}</strong><small>{user.id}</small></div></div></td>
+                  <td><div className="user-cell"><div>{user.name.split(' ').map((part) => part[0]).join('').slice(0, 2)}</div><span><strong>{user.name}</strong><small>{user.id}</small></span></div></td>
                   <td>{roleLabel(user.role)}</td>
                   <td>{user.organization}</td>
                   <td><strong>{user.email}</strong><small>{user.phone || 'No phone stored'}</small></td>
