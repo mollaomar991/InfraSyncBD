@@ -9,6 +9,8 @@ import adminRoutes from './src/routes/adminRoutes.js';
 import projectRoutes from './src/routes/projectRoutes.js';
 import progressRoutes from './src/routes/progressRoutes.js';
 import inspectionRoutes from './src/routes/inspectionRoutes.js';
+import complaintRoutes from './src/routes/complaintRoutes.js';
+import restorationRoutes from './src/routes/restorationRoutes.js';
 
 const app = express();
 
@@ -21,6 +23,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/inspections', inspectionRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/restorations', restorationRoutes);
 // Public departments route for registration form
 app.use('/api/departments', async (req, res) => {
     try {
