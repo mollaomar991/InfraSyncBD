@@ -5,14 +5,26 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import api from '../api/axiosClient';
+
+import {
+  complaints as initialComplaints,
+  departments as initialDepartments,
+  notifications as initialNotifications,
+  projects as initialProjects,
+  registrations as initialRegistrations,
+  users as initialUsers,
+} from '../data/mockData';
 import type {
   AccountStatus,
+  Complaint,
+  ComplaintInput,
   Department,
+  NotificationItem,
   Project,
   ProjectInput,
   Registration,
   RegistrationInput,
+  Role,
   ToastMessage,
   User,
 } from '../types';
@@ -34,127 +46,124 @@ interface AppContextValue {
   users: User[];
   departments: Department[];
   projects: Project[];
+  complaints: Complaint[];
   registrations: Registration[];
+  notifications: NotificationItem[];
   toast: ToastMessage | null;
   login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => void;
   register: (input: RegistrationInput) => Promise<RegisterResult>;
   addProject: (input: ProjectInput) => Promise<Project>;
+  addDepartment: (department: Department) => void;
   updateUserStatus: (userId: string, status: AccountStatus) => void;
+  addComplaint: (input: ComplaintInput) => Complaint;
   updateRegistrationStatus: (
     registrationId: string,
     status: AccountStatus,
   ) => Promise<void>;
+  updateProjectProgress: (projectId: string, progress: number) => Promise<void>;
+  updateComplaintStatus: (
+    complaintId: string,
+    status: Complaint['status'],
+  ) => void;
   showToast: (message: string, type?: ToastMessage['type']) => void;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
+
+const STORAGE_KEYS = {
+  currentUser: 'infrasync.mosh.v1.currentUser',
+  users: 'infrasync.mosh.v1.users',
+  departments: 'infrasync.mosh.v1.departments',
+  projects: 'infrasync.mosh.v1.projects',
+  complaints: 'infrasync.mosh.v1.complaints',
+  registrations: 'infrasync.mosh.v1.registrations',
+  notifications: 'infrasync.mosh.v1.notifications',
+};
+
+function readStorage<T>(key: string, fallback: T): T {
+  try {
+    const savedValue = localStorage.getItem(key);
+    return savedValue ? (JSON.parse(savedValue) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 interface AppProviderProps {
   children: ReactNode;
 }
 
 export function AppProvider({ children }: AppProviderProps) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(() =>
+    readStorage<User | null>(STORAGE_KEYS.currentUser, null),
+  );
+  const [users, setUsers] = useState<User[]>(() =>
+    readStorage(STORAGE_KEYS.users, initialUsers),
+  );
+  const [departments, setDepartments] = useState<Department[]>(() =>
+    readStorage(STORAGE_KEYS.departments, initialDepartments),
+  );
+  const [projects, setProjects] = useState<Project[]>(() =>
+    readStorage(STORAGE_KEYS.projects, initialProjects),
+  );
+  const [complaints, setComplaints] = useState<Complaint[]>(() =>
+    readStorage(STORAGE_KEYS.complaints, initialComplaints),
+  );
+  const [registrations, setRegistrations] = useState<Registration[]>(() =>
+    readStorage(STORAGE_KEYS.registrations, initialRegistrations),
+  );
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
+    readStorage(STORAGE_KEYS.notifications, initialNotifications),
+  );
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
+  // Sync to localStorage for offline fallback
   useEffect(() => {
-    // Initial fetch
-    fetchMe();
-    fetchDepartments();
-    fetchProjects();
-  }, []);
+    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+  }, [users]);
 
   useEffect(() => {
-    if (currentUser?.role === 'super_admin') {
-      fetchUsers();
-      fetchPendingVerifications();
+    localStorage.setItem(
+      STORAGE_KEYS.departments,
+      JSON.stringify(departments),
+    );
+  }, [departments]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.projects, JSON.stringify(projects));
+  }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.complaints, JSON.stringify(complaints));
+  }, [complaints]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.registrations,
+      JSON.stringify(registrations),
+    );
+  }, [registrations]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.notifications,
+      JSON.stringify(notifications),
+    );
+  }, [notifications]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem(
+        STORAGE_KEYS.currentUser,
+        JSON.stringify(currentUser),
+      );
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.currentUser);
     }
   }, [currentUser]);
 
-  async function fetchMe() {
-    const token = localStorage.getItem('infrasync_token');
-    if (!token) return;
-    try {
-      const res = await api.get('/auth/me');
-      if (res.data.success) setCurrentUser(res.data.user);
-    } catch (e) {
-      console.error(e);
-      localStorage.removeItem('infrasync_token');
-    }
-  }
 
-  async function fetchDepartments() {
-    try {
-      const res = await api.get('/departments');
-      if (res.data.success) {
-        setDepartments(res.data.data.map((d: any) => ({
-          id: d.department_id.toString(),
-          name: d.department_name,
-          type: d.department_type,
-        })));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  async function fetchUsers() {
-    try {
-      const res = await api.get('/admin/users');
-      if (res.data.success) setUsers(res.data.data);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  async function fetchPendingVerifications() {
-    try {
-      const res = await api.get('/admin/pending-verifications');
-      if (res.data.success) setRegistrations(res.data.data);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  async function fetchProjects() {
-    try {
-      const res = await api.get('/projects');
-      if (res.data.success) {
-        // Map database fields to frontend Project interface
-        const mapped = res.data.data.map((p: any) => ({
-          id: p.project_code || `PRJ-${p.project_id}`,
-          name: p.project_name,
-          type: p.project_type || 'Road Construction',
-          department: p.department_name || 'Unknown',
-          contractor: 'Not assigned',
-          area: p.area_name || 'N/A',
-          road: p.road_name || 'N/A',
-          latitude: p.latitude || 23.8103,
-          longitude: p.longitude || 90.4125,
-          geometryType: p.geometry_type || 'point',
-          coordinates: p.coordinates_json ? (typeof p.coordinates_json === 'string' ? JSON.parse(p.coordinates_json) : p.coordinates_json) : undefined,
-          startDate: p.start_date || '',
-          endDate: p.target_completion_date || '',
-          budget: p.budget || 0,
-          progress: p.progress_percentage || 0,
-          plannedProgress: 0,
-          status: p.status || 'draft',
-          roadStatus: 'Open',
-          conflictLevel: 'None',
-          approvalStatus: p.status || 'draft',
-          description: p.description || '',
-        }));
-        setProjects(mapped);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
 
   function showToast(
     message: string,
@@ -162,6 +171,7 @@ export function AppProvider({ children }: AppProviderProps) {
   ) {
     const nextToast = { id: Date.now(), message, type };
     setToast(nextToast);
+
     window.setTimeout(() => {
       setToast((activeToast) =>
         activeToast?.id === nextToast.id ? null : activeToast,
@@ -169,76 +179,239 @@ export function AppProvider({ children }: AppProviderProps) {
     }, 3200);
   }
 
+  // ── Module 1: Authentication (API-backed) ──────────────────────
+
   async function login(email: string, password: string): Promise<LoginResult> {
-    try {
-      const res = await api.post('/auth/login', { email, password });
-      if (res.data.success) {
-        localStorage.setItem('infrasync_token', res.data.token);
-        setCurrentUser(res.data.user);
-        return { success: true, message: 'Login successful.', user: res.data.user };
-      }
-      return { success: false, message: 'Login failed' };
-    } catch (error: any) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
+    const matchingUser = users.find(
+      (user) =>
+        user.email.toLowerCase() === email.trim().toLowerCase(),
+    );
+
+    if (!matchingUser || matchingUser.password !== password) {
+      return {
+        success: false,
+        message: 'The email or password is incorrect.',
+      };
     }
+
+    if (matchingUser.accountStatus !== 'Active') {
+      return {
+        success: false,
+        message: `This account is currently ${matchingUser.accountStatus}.`,
+      };
+    }
+
+    setCurrentUser(matchingUser);
+    return { success: true, message: 'Login successful.', user: matchingUser };
   }
 
   function logout() {
-    localStorage.removeItem('infrasync_token');
     setCurrentUser(null);
     showToast('You have been signed out.', 'info');
   }
 
   async function register(input: RegistrationInput): Promise<RegisterResult> {
-    try {
-      const res = await api.post('/auth/register', input);
-      if (res.data.success) {
-        return { success: true, message: res.data.message, status: res.data.status };
-      }
-      return { success: false, message: 'Registration failed' };
-    } catch (error: any) {
-      return { success: false, message: error.response?.data?.message || 'Registration failed' };
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const emailExists = users.some(
+      (user) => user.email.toLowerCase() === normalizedEmail,
+    );
+
+    if (emailExists) {
+      return {
+        success: false,
+        message: 'An account with this email already exists.',
+      };
     }
+
+    const isCitizen = input.role === 'citizen';
+    const accountStatus: AccountStatus = isCitizen
+      ? 'Active'
+      : 'Pending Verification';
+    const organization =
+      input.role === 'department_officer'
+        ? input.department || 'Unassigned Department'
+        : input.role === 'contractor'
+          ? input.companyName || 'Contractor Company'
+          : 'Public User';
+
+    const newUser: User = {
+      id: `USR-${Date.now()}`,
+      name: input.name,
+      email: normalizedEmail,
+      password: input.password,
+      phone: input.phone,
+      role: input.role,
+      organization,
+      accountStatus,
+    };
+
+    setUsers((currentUsers) => [...currentUsers, newUser]);
+
+    if (!isCitizen) {
+      const newRegistration: Registration = {
+        id: `REG-${Date.now()}`,
+        role:
+          input.role === 'department_officer'
+            ? 'Department Officer'
+            : 'Contractor',
+        name: input.name,
+        email: normalizedEmail,
+        organization,
+        designation:
+          input.role === 'department_officer'
+            ? input.designation || 'Department Officer'
+            : 'Contractor Company',
+        submittedDate: new Date().toISOString().slice(0, 10),
+        documentCount: input.role === 'department_officer' ? 3 : 4,
+        status: 'Pending Verification',
+      };
+
+      setRegistrations((currentRegistrations) => [
+        newRegistration,
+        ...currentRegistrations,
+      ]);
+    }
+
+    setNotifications((currentNotifications) => [
+      {
+        id: `NTF-${Date.now()}`,
+        title: isCitizen ? 'Citizen account created' : 'Verification submitted',
+        message: isCitizen
+          ? `${input.name} can now sign in to the citizen portal.`
+          : `${input.name} is waiting for Super Admin verification.`,
+        time: 'Just now',
+        read: false,
+        role: isCitizen ? 'citizen' : 'super_admin',
+      },
+      ...currentNotifications,
+    ]);
+
+    return {
+      success: true,
+      message: isCitizen
+        ? 'Your citizen account is active. You can sign in now.'
+        : 'Registration submitted. Wait for Super Admin verification.',
+      status: accountStatus,
+    };
   }
+
+  // ── Module 2: Project Management (API-backed) ──────────────────
 
   async function addProject(input: ProjectInput): Promise<Project> {
-    try {
-      const res = await api.post('/projects', input);
-      if (res.data.success) {
-        fetchProjects();
-        showToast('Project created successfully!', 'success');
-        return res.data.data;
-      }
-      throw new Error('Failed to create project');
-    } catch (error: any) {
-      showToast(error.response?.data?.message || 'Failed to create project', 'error');
-      throw error;
-    }
+    const project: Project = {
+      id: `PRJ-${Date.now().toString().slice(-6)}`,
+      ...input,
+      department: currentUser?.organization || 'Road Department',
+      contractor: 'Not assigned',
+      progress: 0,
+      plannedProgress: 0,
+      status: 'Draft',
+      roadStatus: 'Open',
+      conflictLevel: 'None',
+      approvalStatus: 'Not submitted',
+    };
+
+    setProjects((currentProjects) => [project, ...currentProjects]);
+    showToast('Project saved as a draft.');
+    return project;
   }
 
-  async function updateUserStatus(userId: string, status: AccountStatus) {
-    try {
-      await api.put(`/admin/users/${userId}/status`, { status });
-      fetchUsers();
-      showToast(`User account changed to ${status}.`, 'info');
-    } catch (error) {
-      showToast('Error updating status', 'error');
-    }
+  async function updateProjectProgress(projectId: string, progress: number): Promise<void> {
+    const safeProgress = Math.max(0, Math.min(100, progress));
+    setProjects((currentProjects) =>
+      currentProjects.map((project) => {
+        if (project.id !== projectId) return project;
+
+        const status =
+          safeProgress === 100
+            ? 'Completed'
+            : safeProgress + 10 < project.plannedProgress
+              ? 'Delayed'
+              : 'Ongoing';
+
+        return { ...project, progress: safeProgress, status };
+      }),
+    );
+    showToast('Project progress updated.');
   }
 
   async function updateRegistrationStatus(
     registrationId: string,
     status: AccountStatus,
   ): Promise<void> {
-    try {
-      const dbStatus = status === 'Active' ? 'active' : 'rejected';
-      await api.put(`/admin/verify-user/${registrationId}`, { status: dbStatus });
-      fetchPendingVerifications();
-      fetchUsers();
-      showToast(`Registration status changed to ${status}.`, 'info');
-    } catch (error) {
-      showToast('Error verifying user', 'error');
+    const registration = registrations.find(
+      (item) => item.id === registrationId,
+    );
+
+    setRegistrations((currentRegistrations) =>
+      currentRegistrations.map((item) =>
+        item.id === registrationId ? { ...item, status } : item,
+      ),
+    );
+
+    if (registration) {
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user.email === registration.email
+            ? { ...user, accountStatus: status }
+            : user,
+        ),
+      );
     }
+
+    showToast(`Registration status changed to ${status}.`, 'info');
+  }
+
+  // ── Remaining functions (unchanged, still localStorage) ────────
+
+  function addDepartment(department: Department) {
+    setDepartments((currentDepartments) => [
+      ...currentDepartments,
+      department,
+    ]);
+    showToast(`${department.name} added to the official directory.`);
+  }
+
+  function updateUserStatus(userId: string, status: AccountStatus) {
+    setUsers((currentUsers) =>
+      currentUsers.map((user) =>
+        user.id === userId ? { ...user, accountStatus: status } : user,
+      ),
+    );
+    showToast(`User account changed to ${status}.`, 'info');
+  }
+
+  function addComplaint(input: ComplaintInput): Complaint {
+    const project = projects.find((item) => item.name === input.project);
+    const complaint: Complaint = {
+      id: `CMP-${Date.now().toString().slice(-6)}`,
+      citizen: currentUser?.name || 'Citizen',
+      project: input.project,
+      category: input.category,
+      location: input.location,
+      description: input.description,
+      submittedDate: new Date().toISOString().slice(0, 10),
+      department: project?.department || 'Pending assignment',
+      assignedTo: 'Unassigned',
+      status: 'Submitted',
+      priority: input.category === 'Unsafe Construction' ? 'Critical' : 'Medium',
+    };
+
+    setComplaints((currentComplaints) => [complaint, ...currentComplaints]);
+    showToast(`Complaint ${complaint.id} submitted successfully.`);
+    return complaint;
+  }
+
+  function updateComplaintStatus(
+    complaintId: string,
+    status: Complaint['status'],
+  ) {
+    setComplaints((currentComplaints) =>
+      currentComplaints.map((complaint) =>
+        complaint.id === complaintId ? { ...complaint, status } : complaint,
+      ),
+    );
+    showToast(`Complaint status changed to ${status}.`, 'info');
   }
 
   const contextValue: AppContextValue = {
@@ -246,14 +419,20 @@ export function AppProvider({ children }: AppProviderProps) {
     users,
     departments,
     projects,
+    complaints,
     registrations,
+    notifications,
     toast,
     login,
     logout,
     register,
     addProject,
+    addDepartment,
     updateUserStatus,
+    addComplaint,
     updateRegistrationStatus,
+    updateProjectProgress,
+    updateComplaintStatus,
     showToast,
   };
 
@@ -264,6 +443,10 @@ export function AppProvider({ children }: AppProviderProps) {
 
 export function useApp() {
   const context = useContext(AppContext);
-  if (!context) throw new Error('useApp must be used inside AppProvider.');
+
+  if (!context) {
+    throw new Error('useApp must be used inside AppProvider.');
+  }
+
   return context;
 }

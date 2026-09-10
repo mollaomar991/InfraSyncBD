@@ -1880,8 +1880,7 @@ textarea {
   line-height: 1.38;
 }
 
-.conflict-arrow,
-.restoration-arrow {
+.conflict-arrow {
   display: grid;
   place-items: center;
   color: var(--road-red);
@@ -2328,10 +2327,9 @@ textarea {
 }
 
 /* --------------------------------------------------------------------------
-   Inspections and restoration
+   Inspections
    -------------------------------------------------------------------------- */
-.inspection-grid,
-.restoration-grid {
+.inspection-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 17px;
@@ -2350,25 +2348,7 @@ textarea {
   box-shadow: var(--shadow-sm);
 }
 
-.restoration-card {
-  position: relative;
-  overflow: hidden;
-  padding: 19px;
-  border: 1px solid var(--border);
-  border-radius: 19px;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-}
-
-.restoration-card header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.inspection-card::before,
-.restoration-card::before {
+.inspection-card::before {
   content: '';
   width: 5px;
   position: absolute;
@@ -2416,8 +2396,7 @@ textarea {
   font-size: 1.05rem;
 }
 
-.inspection-card h2,
-.restoration-card h2 {
+.inspection-card h2 {
   margin: 0 0 4px;
   font-size: 0.93rem;
 }
@@ -2431,7 +2410,6 @@ textarea {
 }
 
 .inspection-checks,
-.restoration-checklist,
 .checklist-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2440,7 +2418,6 @@ textarea {
 }
 
 .inspection-checks>div,
-.restoration-checklist>div,
 .checklist-grid>div {
   display: flex;
   align-items: center;
@@ -2454,42 +2431,9 @@ textarea {
 }
 
 .inspection-checks strong,
-.restoration-checklist strong,
 .checklist-grid strong {
   color: var(--asphalt-900);
   font-size: 0.66rem;
-}
-
-.before-after {
-  display: grid;
-  grid-template-columns: 1fr 34px 1fr;
-  align-items: center;
-  gap: 8px;
-  margin: 15px 0;
-}
-
-.restoration-photo {
-  min-height: 112px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 5px;
-  border: 1px dashed #d7ccc3;
-  border-radius: 14px;
-  color: var(--text-secondary);
-  background:
-    linear-gradient(rgba(18, 18, 21, 0.03), rgba(18, 18, 21, 0.03)),
-    repeating-linear-gradient(45deg, #faf7f4 0 10px, #f4efea 10px 20px);
-  text-align: center;
-}
-
-.restoration-photo strong {
-  color: var(--asphalt-900);
-  font-size: 0.74rem;
-}
-
-.restoration-photo small {
-  font-size: 0.62rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -3172,7 +3116,6 @@ textarea {
   .conflict-grid,
   .complaint-grid,
   .inspection-grid,
-  .restoration-grid,
   .contractor-card-grid {
     grid-template-columns: 1fr;
   }
@@ -3299,7 +3242,6 @@ textarea {
   .compact-details,
   .progress-comparison,
   .inspection-checks,
-  .restoration-checklist,
   .checklist-grid,
   .verification-actions {
     grid-template-columns: 1fr;
@@ -3323,14 +3265,6 @@ textarea {
   }
 
   .conflict-arrow {
-    transform: rotate(90deg);
-  }
-
-  .before-after {
-    grid-template-columns: 1fr;
-  }
-
-  .restoration-arrow {
     transform: rotate(90deg);
   }
 

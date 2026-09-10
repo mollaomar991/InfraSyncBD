@@ -23,7 +23,6 @@ export type ProjectStatus =
   | 'Delayed'
   | 'Inspection Pending'
   | 'Rework Required'
-  | 'Restoration Pending'
   | 'Completed'
   | 'Archived';
 
@@ -57,8 +56,6 @@ export interface Project {
   road: string;
   latitude: number;
   longitude: number;
-  geometryType?: 'point' | 'polyline' | 'polygon';
-  coordinates?: [number, number][];
   startDate: string;
   endDate: string;
   budget: number;
@@ -83,6 +80,88 @@ export interface Registration {
   status: AccountStatus;
 }
 
+export interface Conflict {
+  id: string;
+  level: 'Low' | 'Medium' | 'High';
+  project: string;
+  conflictingProject: string;
+  departments: string;
+  location: string;
+  overlap: string;
+  reason: string;
+  recommendation: string;
+  status: string;
+}
+
+export interface Approval {
+  id: string;
+  project: string;
+  department: string;
+  officer: string;
+  pendingDays: number;
+  status: 'Pending' | 'Approved' | 'Change Requested' | 'Rejected';
+  impact: string;
+}
+
+export interface Contractor {
+  id: string;
+  name: string;
+  licenseStatus: string;
+  activeProjects: number;
+  completedProjects: number;
+  delayedProjects: number;
+  performance: number;
+  safety: number;
+  failedInspections: number;
+  complaints: number;
+  risk: 'Low' | 'Medium' | 'High' | 'Blacklisted';
+}
+
+export interface Complaint {
+  id: string;
+  citizen: string;
+  project: string;
+  category: string;
+  location: string;
+  description: string;
+  submittedDate: string;
+  department: string;
+  assignedTo: string;
+  status:
+    | 'Submitted'
+    | 'Under Review'
+    | 'Assigned'
+    | 'In Progress'
+    | 'Resolved'
+    | 'Rejected'
+    | 'Closed';
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+}
+
+export interface Inspection {
+  id: string;
+  project: string;
+  milestone: string;
+  inspector: string;
+  date: string;
+  result:
+    | 'Scheduled'
+    | 'Passed'
+    | 'Passed with Conditions'
+    | 'Failed'
+    | 'Reinspection Required';
+  failedItems: number;
+}
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  role?: Role;
+}
+
 export interface ToastMessage {
   id: number;
   message: string;
@@ -90,7 +169,7 @@ export interface ToastMessage {
 }
 
 export interface RegistrationInput {
-  role: Role;
+  role: Exclude<Role, 'super_admin'>;
   name: string;
   email: string;
   phone: string;
@@ -117,5 +196,13 @@ export interface ProjectInput {
   endDate: string;
   road: string;
   area: string;
-  coordinates: [number, number][];
+  latitude: number;
+  longitude: number;
+}
+
+export interface ComplaintInput {
+  project: string;
+  category: string;
+  location: string;
+  description: string;
 }
