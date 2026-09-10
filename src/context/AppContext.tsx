@@ -14,6 +14,7 @@ import {
   registrations as initialRegistrations,
   users as initialUsers,
 } from '../data/mockData';
+import api from '../api/axiosClient';
 import type {
   AccountStatus,
   Complaint,
@@ -61,7 +62,7 @@ interface AppContextValue {
     registrationId: string,
     status: AccountStatus,
   ) => Promise<void>;
-  updateProjectProgress: (projectId: string, progress: number) => Promise<void>;
+  updateProjectProgress: (projectId: string, payload: any) => Promise<void>;
   updateComplaintStatus: (
     complaintId: string,
     status: Complaint['status'],
@@ -316,23 +317,30 @@ export function AppProvider({ children }: AppProviderProps) {
     return project;
   }
 
-  async function updateProjectProgress(projectId: string, progress: number): Promise<void> {
-    const safeProgress = Math.max(0, Math.min(100, progress));
-    setProjects((currentProjects) =>
-      currentProjects.map((project) => {
-        if (project.id !== projectId) return project;
-
-        const status =
-          safeProgress === 100
-            ? 'Completed'
-            : safeProgress + 10 < project.plannedProgress
-              ? 'Delayed'
-              : 'Ongoing';
-
-        return { ...project, progress: safeProgress, status };
-      }),
-    );
-    showToast('Project progress updated.');
+  async function updateProjectProgress(projectId: string, payload: any): Promise<void> {
+    try {
+      // Send progress data to the backend
+      const res = await api.post('/progress/submit', payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      if (res.data.success) {
+        // Just update local progress state to reflect changes instantly (simplified)
+        const safeProgress = Math.max(0, Math.min(100, Number(payload.get('physicalProgress')) || 0));
+        setProjects((currentProjects) =>
+          currentProjects.map((project) => {
+            if (project.id !== projectId) return project;
+            const status = safeProgress === 100 ? 'Completed' : payload.get('delayReason') ? 'Delayed' : 'Ongoing';
+            return { ...project, progress: safeProgress, status };
+          })
+        );
+        showToast('Project progress updated on the server.');
+      }
+    } catch (error) {
+      console.error('Failed to update progress', error);
+      showToast('Failed to save progress update.', 'error');
+    }
   }
 
   async function updateRegistrationStatus(

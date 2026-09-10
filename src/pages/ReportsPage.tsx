@@ -4,13 +4,47 @@ import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 import { conflicts, contractors, inspections } from '../data/mockData';
 import { formatCurrency } from '../utils';
+import api from '../api/axiosClient';
 
 function ReportsPage() {
   const { projects, complaints } = useApp();
+  const [analytics, setAnalytics] = import('react').then(m => m.useState) ? null as any : null; // Hack to use hooks if missing
+  // Actually we need useState and useEffect
+  const [data, setData] = (require('react') as any).useState(null);
+  const [stats, setStats] = (require('react') as any).useState({
+      totalProjects: projects.length,
+      activeProjects: 0,
+      delayedProjects: projects.filter((project) => project.status === 'Delayed').length,
+      reworkProjects: 0,
+      totalComplaints: complaints.length,
+      openComplaints: complaints.length - complaints.filter((c) => ['Resolved', 'Closed'].includes(c.status)).length,
+      totalInspections: inspections.length,
+      failedInspections: inspections.filter((i) => i.result === 'Failed').length
+  });
+
+  (require('react') as any).useEffect(() => {
+     api.get('/analytics').then(res => {
+        if(res.data.success) {
+           const d = res.data.data;
+           setStats({
+               totalProjects: d.projects.totalProjects || 0,
+               activeProjects: d.projects.activeProjects || 0,
+               delayedProjects: d.projects.delayedProjects || 0,
+               reworkProjects: d.projects.reworkProjects || 0,
+               totalComplaints: d.complaints.totalComplaints || 0,
+               openComplaints: d.complaints.openComplaints || 0,
+               totalInspections: d.inspections.totalInspections || 0,
+               failedInspections: d.inspections.failedInspections || 0
+           });
+        }
+     }).catch(console.error);
+  }, []);
+
   const totalBudget = projects.reduce((sum, project) => sum + project.budget, 0);
   const completedProjects = projects.filter((project) => project.status === 'Completed').length;
-  const delayedProjects = projects.filter((project) => project.status === 'Delayed').length;
-  const resolvedComplaints = complaints.filter((complaint) => ['Resolved', 'Closed'].includes(complaint.status)).length;
+  // Use stats for displayed numbers where possible
+  const delayedProjects = stats.delayedProjects;
+  const resolvedComplaints = stats.totalComplaints - stats.openComplaints;
 
   const departmentCounts = projects.reduce<Record<string, number>>((counts, project) => {
     counts[project.department] = (counts[project.department] || 0) + 1;
@@ -29,12 +63,12 @@ function ReportsPage() {
       <PageHeader eyebrow="REPORTS AND ANALYTICS" title="Infrastructure Performance Reports" description="Review project, conflict, contractor, complaint, budget, and inspection indicators." action={<button className="road-button road-button-primary" onClick={() => window.print()}>⇩ Export Report</button>} />
 
       <section className="stats-grid stats-grid-six">
-        <StatCard label="Total Projects" value={projects.length} note={`${completedProjects} completed`} icon="▤" tone="blue" />
+        <StatCard label="Total Projects" value={stats.totalProjects} note={`${stats.activeProjects} ongoing, ${stats.reworkProjects} rework`} icon="▤" tone="blue" />
         <StatCard label="Approved Budget" value={formatCurrency(totalBudget)} note="Across visible projects" icon="৳" tone="orange" delay={70} />
-        <StatCard label="Delayed Projects" value={delayedProjects} note="Below planned progress" icon="↘" tone="red" delay={140} />
+        <StatCard label="Delayed Projects" value={stats.delayedProjects} note="Below planned progress" icon="↘" tone="red" delay={140} />
         <StatCard label="Total Conflicts" value={conflicts.length} note={`${conflicts.filter((item) => item.status === 'Resolved').length} resolved`} icon="!" tone="red" delay={210} />
-        <StatCard label="Complaints Resolved" value={`${resolvedComplaints}/${complaints.length}`} note="Public issue performance" icon="◉" tone="green" delay={280} />
-        <StatCard label="Passed Inspections" value={inspections.filter((item) => item.result.includes('Passed')).length} note="Quality checks passed" icon="◎" tone="green" delay={350} />
+        <StatCard label="Complaints Resolved" value={`${resolvedComplaints}/${stats.totalComplaints}`} note="Public issue performance" icon="◉" tone="green" delay={280} />
+        <StatCard label="Failed Inspections" value={stats.failedInspections} note={`Out of ${stats.totalInspections} total`} icon="◎" tone="red" delay={350} />
       </section>
 
       <section className="report-grid">
