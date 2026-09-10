@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import { useApp } from '../context/AppContext';
 import api from '../api/axiosClient';
-
+const initialForm = {
   projectId: '',
   category: 'Road Damage',
   locationAddress: '',
