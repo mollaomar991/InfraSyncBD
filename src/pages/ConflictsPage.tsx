@@ -1,15 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
-import { conflicts as initialConflicts } from '../data/mockData';
+import api from '../api/axiosClient';
 import type { Conflict } from '../types';
 
 function ConflictsPage() {
-  const [conflictItems, setConflictItems] = useState<Conflict[]>(initialConflicts);
+  const [conflictItems, setConflictItems] = useState<Conflict[]>([]);
   const [levelFilter, setLevelFilter] = useState('All');
   const { currentUser, showToast } = useApp();
+
+  // Fetch conflicts from real API
+  useEffect(() => {
+    async function fetchConflicts() {
+      try {
+        const res = await api.get('/conflicts');
+        if (res.data.success) {
+          // Map database fields to frontend Conflict type
+          const mapped = res.data.data.map((row: any) => ({
+            id: row.conflict_id.toString(),
+            level: row.conflict_level.charAt(0).toUpperCase() + row.conflict_level.slice(1),
+            project: row.project_name || 'Unknown Project',
+            conflictingProject: row.conflicting_project_name || 'Unknown Project',
+            departments: `${row.project_department || ''} ↔ ${row.conflicting_department || ''}`,
+            location: 'Same road / nearby area',
+            overlap: row.created_at ? new Date(row.created_at).toLocaleDateString() : '',
+            reason: row.conflict_reason,
+            recommendation: row.recommended_sequence,
+            status: row.resolution_status.charAt(0).toUpperCase() + row.resolution_status.slice(1).replace('_', ' '),
+          }));
+          setConflictItems(mapped);
+        }
+      } catch (error) {
+        console.error('Error fetching conflicts:', error);
+      }
+    }
+    fetchConflicts();
+  }, []);
 
   if (!currentUser) return null;
 
@@ -18,11 +46,19 @@ function ConflictsPage() {
     (item) => levelFilter === 'All' || item.level === levelFilter,
   );
 
-  function updateConflict(conflictId: string, status: string) {
-    setConflictItems((items) =>
-      items.map((item) => (item.id === conflictId ? { ...item, status } : item)),
-    );
-    showToast(`Conflict changed to ${status}.`, 'info');
+  async function updateConflict(conflictId: string, status: string) {
+    try {
+      if (status === 'Resolved') {
+        await api.put(`/conflicts/${conflictId}/resolve`);
+      }
+      setConflictItems((items) =>
+        items.map((item) => (item.id === conflictId ? { ...item, status } : item)),
+      );
+      showToast(`Conflict changed to ${status}.`, 'info');
+    } catch (error) {
+      console.error('Error updating conflict:', error);
+      showToast('Failed to update conflict.', 'error');
+    }
   }
 
   return (
