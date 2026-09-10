@@ -1,27 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
-import { approvals as initialApprovals } from '../data/mockData';
+import api from '../api/axiosClient';
 import type { Approval } from '../types';
 
 function ApprovalsPage() {
-  const [approvalItems, setApprovalItems] = useState<Approval[]>(initialApprovals);
+  const [approvalItems, setApprovalItems] = useState<Approval[]>([]);
   const { currentUser, showToast } = useApp();
+
+  // Fetch approvals from real API
+  useEffect(() => {
+    async function fetchApprovals() {
+      try {
+        const res = await api.get('/approvals');
+        if (res.data.success) {
+          // Map database fields to frontend Approval type
+          const mapped = res.data.data.map((row: any) => {
+            // Calculate pending days from created_at
+            const createdDate = new Date(row.created_at);
+            const today = new Date();
+            const diffDays = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            return {
+              id: row.approval_id.toString(),
+              project: row.project_name || 'Unknown Project',
+              department: row.approving_department || 'Unknown',
+              officer: row.reviewed_by_officer_id ? `Officer #${row.reviewed_by_officer_id}` : 'Awaiting',
+              pendingDays: diffDays,
+              status: row.decision === 'pending' ? 'Pending'
+                : row.decision === 'approved' ? 'Approved'
+                : row.decision === 'modification_requested' ? 'Change Requested'
+                : 'Rejected',
+              impact: row.project_status || '',
+            };
+          });
+          setApprovalItems(mapped);
+        }
+      } catch (error) {
+        console.error('Error fetching approvals:', error);
+      }
+    }
+    fetchApprovals();
+  }, []);
 
   if (!currentUser) return null;
 
   const isAdmin = currentUser.role === 'super_admin';
 
-  function changeDecision(
+  async function changeDecision(
     approvalId: string,
     status: Approval['status'],
   ) {
-    setApprovalItems((items) =>
-      items.map((item) => (item.id === approvalId ? { ...item, status } : item)),
-    );
-    showToast(`Approval decision saved as ${status}.`, 'info');
+    try {
+      // Map frontend status back to database enum
+      const dbDecision = status === 'Approved' ? 'approved'
+        : status === 'Change Requested' ? 'modification_requested'
+        : 'rejected';
+
+      await api.post(`/approvals/${approvalId}/vote`, {
+        decision: dbDecision,
+        comments: '',
+      });
+
+      setApprovalItems((items) =>
+        items.map((item) => (item.id === approvalId ? { ...item, status } : item)),
+      );
+      showToast(`Approval decision saved as ${status}.`, 'info');
+    } catch (error) {
+      console.error('Error voting on approval:', error);
+      showToast('Failed to save decision.', 'error');
+    }
   }
 
   return (
