@@ -28,22 +28,34 @@ function ProgressPage() {
     setFinancialProgress(Math.max(0, (project?.progress || 0) - 5));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
 
-    window.setTimeout(async () => {
-      await updateProjectProgress(selectedProjectId, progress);
+    const formData = new FormData(event.currentTarget);
+    formData.append('projectId', selectedProjectId);
+    // Include the state values not natively caught by basic form inputs or if names are missing
+    formData.set('physicalProgress', progress.toString());
+    formData.set('financialProgress', financialProgress.toString());
+    formData.set('completedWork', completedWork);
+    formData.set('remainingWork', remainingWork);
+    formData.set('delayReason', delayReason);
+
+    try {
+      await updateProjectProgress(selectedProjectId, formData);
       showToast(
         isContractor
-          ? 'Progress update submitted for Department Officer review.'
+          ? 'Progress update submitted to the server for review.'
           : 'Progress review decision saved.',
       );
-      setLoading(false);
       setCompletedWork('');
       setRemainingWork('');
       setDelayReason('');
-    }, 1000);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -169,7 +181,7 @@ function ProgressPage() {
 
               <label className="form-field full-field">
                 <span>Site photographs and evidence</span>
-                <input type="file" multiple />
+                <input type="file" name="photo" multiple />
               </label>
 
               <div className="full-field">
