@@ -40,3 +40,31 @@ export const scheduleInspection = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
+export const saveInspectionResult = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { result, remarks, checklist } = req.body;
+        
+        // Update inspection record
+        await pool.query(
+            `UPDATE inspections SET result = ?, engineer_remarks = ?, completed_at = NOW() WHERE inspection_id = ?`,
+            [result, remarks, id]
+        );
+        
+        // Insert checklist items if provided
+        if (checklist && Array.isArray(checklist)) {
+            for (const item of checklist) {
+                await pool.query(
+                    `INSERT INTO inspection_checklist_items (inspection_id, criteria_title, status) VALUES (?, ?, ?)`,
+                    [id, item.title, item.status]
+                );
+            }
+        }
+        
+        res.json({ success: true, message: 'Inspection result saved' });
+    } catch (error) {
+        console.error('Error saving inspection result:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
