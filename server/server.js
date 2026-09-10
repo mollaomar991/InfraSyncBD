@@ -11,6 +11,7 @@ import progressRoutes from './src/routes/progressRoutes.js';
 import inspectionRoutes from './src/routes/inspectionRoutes.js';
 import complaintRoutes from './src/routes/complaintRoutes.js';
 import restorationRoutes from './src/routes/restorationRoutes.js';
+import analyticsRoutes from './src/routes/analyticsRoutes.js';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/inspections', inspectionRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/restorations', restorationRoutes);
+app.use('/api/analytics', analyticsRoutes);
 // Public departments route for registration form
 app.use('/api/departments', async (req, res) => {
     try {
