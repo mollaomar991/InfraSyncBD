@@ -4,12 +4,11 @@ import LoadingButton from '../components/LoadingButton';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import { useApp } from '../context/AppContext';
-import type { ComplaintInput } from '../types';
-
-const initialForm: ComplaintInput = {
-  project: '',
+import api from '../api/axiosClient';
+const initialForm = {
+  projectId: '',
   category: 'Road Damage',
-  location: '',
+  locationAddress: '',
   description: '',
 };
 
@@ -19,14 +18,30 @@ function SubmitComplaintPage() {
   const { projects, addComplaint } = useApp();
   const navigate = useNavigate();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
 
-    window.setTimeout(() => {
-      addComplaint(form);
-      navigate('/complaints');
-    }, 1100);
+    const formData = new FormData(event.currentTarget);
+    formData.append('projectId', form.projectId);
+    formData.append('category', form.category);
+    formData.append('locationAddress', form.locationAddress);
+    formData.append('description', form.description);
+
+    try {
+      const res = await api.post('/complaints/submit', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        showToast('Complaint submitted with Ticket: ' + res.data.ticketNo, 'success');
+        navigate('/complaints');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to submit complaint', 'error');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -43,15 +58,15 @@ function SubmitComplaintPage() {
             <label className="form-field full-field">
               <span>Related project *</span>
               <select
-                value={form.project}
+                value={form.projectId}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, project: event.target.value }))
+                  setForm((current) => ({ ...current, projectId: event.target.value }))
                 }
                 required
               >
                 <option value="">Select a public project</option>
                 {projects.map((project) => (
-                  <option key={project.id} value={project.name}>
+                  <option key={project.id} value={project.id.replace('PRJ-', '') || '1'}>
                     {project.name} — {project.area}
                   </option>
                 ))}
@@ -81,9 +96,9 @@ function SubmitComplaintPage() {
             <label className="form-field">
               <span>Location *</span>
               <input
-                value={form.location}
+                value={form.locationAddress}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, location: event.target.value }))
+                  setForm((current) => ({ ...current, locationAddress: event.target.value }))
                 }
                 placeholder="Road, landmark, or area"
                 required
@@ -107,8 +122,8 @@ function SubmitComplaintPage() {
 
             <label className="form-field full-field">
               <span>Photograph</span>
-              <input type="file" accept="image/*" />
-              <small>Frontend file selection only; no server upload is included.</small>
+              <input type="file" name="photo" accept="image/*" />
+              <small>Upload photo evidence of the issue.</small>
             </label>
           </div>
         </Panel>

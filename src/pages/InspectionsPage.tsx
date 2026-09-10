@@ -3,13 +3,14 @@ import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
-import { inspections as initialInspections } from '../data/mockData';
+import api from '../api/axiosClient';
 import type { Inspection } from '../types';
 
 function InspectionsPage() {
-  const [inspectionItems, setInspectionItems] =
-    useState<Inspection[]>(initialInspections);
-  const { currentUser, showToast } = useApp();
+  const [inspectionItems, setInspectionItems] = useState<any[]>([]);
+  const { currentUser, showToast, projects } = useApp();
+  const [scheduleProjectId, setScheduleProjectId] = useState(projects[0]?.id || '');
+  const [scheduleDate, setScheduleDate] = useState('');
 
   if (!currentUser) return null;
 
@@ -17,17 +18,53 @@ function InspectionsPage() {
   const isOfficer = currentUser.role === 'department_officer';
   const isContractor = currentUser.role === 'contractor';
 
-  function updateResult(
+  useEffect(() => {
+    fetchInspections();
+  }, []);
+
+  async function fetchInspections() {
+    try {
+      const res = await api.get('/inspections');
+      if (res.data.success) {
+        setInspectionItems(res.data.data.map((item: any) => ({
+          id: item.inspection_id,
+          project: `Project ${item.project_id}`,
+          milestone: item.milestone_id ? `Milestone ${item.milestone_id}` : 'General Inspection',
+          date: item.scheduled_date,
+          result: item.result === 'pending' ? 'Pending' : item.result === 'passed' ? 'Passed' : item.result === 'failed' ? 'Failed' : 'Reinspection Required',
+          inspector: `Officer ${item.inspector_officer_id}`,
+          failedItems: 0
+        })));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function updateResult(
     inspectionId: string,
     result: Inspection['result'],
     failedItems = 0,
   ) {
-    setInspectionItems((items) =>
-      items.map((item) =>
-        item.id === inspectionId ? { ...item, result, failedItems } : item,
-      ),
-    );
-    showToast(`Inspection result changed to ${result}.`, 'info');
+    try {
+      const dbResult = result === 'Passed' ? 'passed' : result === 'Failed' ? 'failed' : 'reinspection_required';
+      const res = await api.post(`/inspections/${inspectionId}/save`, {
+        result: dbResult,
+        remarks: 'Reviewed by officer',
+        checklist: []
+      });
+      if (res.data.success) {
+        setInspectionItems((items) =>
+          items.map((item) =>
+            item.id === inspectionId ? { ...item, result, failedItems } : item,
+          ),
+        );
+        showToast(`Inspection result changed to ${result}.`, 'info');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Error saving inspection result', 'error');
+    }
   }
 
   return (
@@ -153,9 +190,8 @@ function InspectionsPage() {
           <div className="form-grid form-grid-4">
             <label className="form-field">
               <span>Project</span>
-              <select>
-                <option>Mirpur 12 Road Reconstruction</option>
-                <option>Gulshan Drainage Improvement</option>
+              <select value={scheduleProjectId} onChange={(e) => setScheduleProjectId(e.target.value)}>
+                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </label>
             <label className="form-field">
@@ -164,12 +200,25 @@ function InspectionsPage() {
             </label>
             <label className="form-field">
               <span>Date</span>
-              <input type="date" />
+              <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
             </label>
             <button
               className="button button-primary align-end"
               type="button"
-              onClick={() => showToast('Demo inspection scheduled.')}
+              onClick={async () => {
+                if(!scheduleDate) return showToast('Select a date', 'error');
+                try {
+                  // extracting numeric ID from PRJ-XXXXXX for simplicity
+                  const pid = scheduleProjectId.replace('PRJ-', '') || '1';
+                  const res = await api.post('/inspections/schedule', { projectId: pid, scheduledDate: scheduleDate });
+                  if (res.data.success) {
+                    showToast('Inspection scheduled.');
+                    fetchInspections();
+                  }
+                } catch(e) {
+                   showToast('Error scheduling inspection', 'error');
+                }
+              }}
             >
               Schedule inspection
             </button>

@@ -7,6 +7,12 @@ import cors from 'cors';
 import authRoutes from './src/routes/authRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
 import projectRoutes from './src/routes/projectRoutes.js';
+import progressRoutes from './src/routes/progressRoutes.js';
+import inspectionRoutes from './src/routes/inspectionRoutes.js';
+import complaintRoutes from './src/routes/complaintRoutes.js';
+import restorationRoutes from './src/routes/restorationRoutes.js';
+import analyticsRoutes from './src/routes/analyticsRoutes.js';
+import notificationRoutes from './src/routes/notificationRoutes.js';
 
 const app = express();
 
@@ -17,6 +23,12 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/inspections', inspectionRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/restorations', restorationRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 // Public departments route for registration form
 app.use('/api/departments', async (req, res) => {
     try {
