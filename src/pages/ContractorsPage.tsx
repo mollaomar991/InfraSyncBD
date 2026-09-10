@@ -1,30 +1,81 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LoadingButton from '../components/LoadingButton';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
-import { contractors } from '../data/mockData';
+import api from '../api/axiosClient';
+import type { Contractor } from '../types';
 
 function ContractorsPage() {
-  const [selectedContractor, setSelectedContractor] = useState('');
-  const [selectedProject, setSelectedProject] = useState('');
+  const [contractorsList, setContractorsList] = useState<Contractor[]>([]);
+  const [selectedContractorId, setSelectedContractorId] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
   const [assigning, setAssigning] = useState(false);
   const { currentUser, projects, showToast } = useApp();
+  
   const isAdmin = currentUser?.role === 'super_admin';
   const isOfficer = currentUser?.role === 'department_officer';
 
+  // Fetch verified contractors from real API
+  useEffect(() => {
+    async function fetchContractors() {
+      try {
+        const res = await api.get('/contractors/verified');
+        if (res.data.success) {
+          // Map database fields to frontend Contractor type
+          const mapped = res.data.data.map((row: any) => ({
+            id: row.contractor_id.toString(),
+            name: row.company_name || 'Unknown Company',
+            licenseStatus: 'Active', // Assuming they are active if verified
+            activeProjects: row.total_assigned_projects - row.completed_projects,
+            completedProjects: row.completed_projects,
+            delayedProjects: row.delayed_projects,
+            performance: Math.round((row.performance_rating / 5) * 100),
+            safety: Math.round((row.safety_rating / 5) * 100),
+            failedInspections: 0, // Not tracked directly in this table yet
+            complaints: 0, // Not tracked directly in this table yet
+            risk: row.risk_level === 'low_risk' ? 'Low'
+              : row.risk_level === 'medium_risk' ? 'Medium'
+              : row.risk_level === 'high_risk' ? 'High'
+              : 'Blacklisted',
+          }));
+          setContractorsList(mapped);
+        }
+      } catch (error) {
+        console.error('Error fetching contractors:', error);
+      }
+    }
+    fetchContractors();
+  }, []);
+
   async function assignContractor() {
-    if (!selectedContractor || !selectedProject) {
+    if (!selectedContractorId || !selectedProjectId) {
       showToast('Select both a project and a contractor.', 'warning');
       return;
     }
 
     setAssigning(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 850));
-    setAssigning(false);
-    showToast(`${selectedContractor} assigned to ${selectedProject}.`);
-    setSelectedContractor('');
-    setSelectedProject('');
+    try {
+      await api.post('/contractors/assign', {
+        projectId: parseInt(selectedProjectId),
+        contractorId: parseInt(selectedContractorId)
+      });
+      
+      const contractorName = contractorsList.find(c => c.id === selectedContractorId)?.name || 'Contractor';
+      const projectName = projects.find(p => p.id === selectedProjectId)?.name || 'Project';
+      
+      showToast(`${contractorName} assigned to ${projectName}.`, 'success');
+      
+      setSelectedContractorId('');
+      setSelectedProjectId('');
+      
+      // Optionally re-fetch projects here or rely on AppContext to refresh
+    } catch (error) {
+      console.error('Error assigning contractor:', error);
+      showToast('Failed to assign contractor.', 'error');
+    } finally {
+      setAssigning(false);
+    }
   }
 
   return (
@@ -48,19 +99,19 @@ function ContractorsPage() {
           </div>
           <label className="form-field">
             <span>Approved project</span>
-            <select value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)}>
+            <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
               <option value="">Select project</option>
               {projects.filter((project) => project.approvalStatus === 'Final Approved').map((project) => (
-                <option key={project.id} value={project.name}>{project.name}</option>
+                <option key={project.id} value={project.id}>{project.name}</option>
               ))}
             </select>
           </label>
           <label className="form-field">
             <span>Verified contractor</span>
-            <select value={selectedContractor} onChange={(event) => setSelectedContractor(event.target.value)}>
+            <select value={selectedContractorId} onChange={(event) => setSelectedContractorId(event.target.value)}>
               <option value="">Select contractor</option>
-              {contractors.filter((contractor) => contractor.risk !== 'Blacklisted' && contractor.licenseStatus !== 'Expired').map((contractor) => (
-                <option key={contractor.id} value={contractor.name}>{contractor.name}</option>
+              {contractorsList.filter((contractor) => contractor.risk !== 'Blacklisted' && contractor.licenseStatus !== 'Expired').map((contractor) => (
+                <option key={contractor.id} value={contractor.id}>{contractor.name}</option>
               ))}
             </select>
           </label>
@@ -71,7 +122,7 @@ function ContractorsPage() {
       )}
 
       <section className="contractor-card-grid">
-        {contractors.map((contractor, index) => (
+        {contractorsList.map((contractor, index) => (
           <article className="contractor-card card-enter" key={contractor.id} style={{ animationDelay: `${index * 70}ms` }}>
             <header>
               <div className="contractor-logo">▲</div>
@@ -95,7 +146,7 @@ function ContractorsPage() {
             <footer>
               <button className="road-button road-button-secondary" type="button" onClick={() => showToast(`${contractor.name} performance report opened.`, 'info')}>View Performance</button>
               {isOfficer && contractor.risk !== 'High' && (
-                <button className="road-button road-button-primary" type="button" onClick={() => setSelectedContractor(contractor.name)}>Select for Assignment</button>
+                <button className="road-button road-button-primary" type="button" onClick={() => setSelectedContractorId(contractor.id)}>Select for Assignment</button>
               )}
               {isAdmin && <span className="monitor-only-label">OVERSIGHT ONLY</span>}
             </footer>
