@@ -4,7 +4,6 @@ import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 import type { AccountStatus, Registration } from '../types';
-import styles from './VerificationPage.module.css';
 
 function VerificationPage() {
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
@@ -35,7 +34,7 @@ function VerificationPage() {
 
       <section className="content-card verification-table-card page-enter">
         <div className="table-responsive">
-          <table className={`data-table ${styles.verificationTable}`}>
+          <table className="data-table">
             <thead><tr><th>Applicant</th><th>Role</th><th>Organization</th><th>Submitted</th><th>Documents</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
               {registrations.map((registration) => (
@@ -44,7 +43,7 @@ function VerificationPage() {
                   <td>{registration.role}</td>
                   <td><strong>{registration.organization}</strong><small>{registration.designation}</small></td>
                   <td>{registration.submittedDate}</td>
-                  <td><span className={styles.documentCount}><span className={styles.documentCountIcon} aria-hidden="true">▤</span>{registration.documentCount} files</span></td>
+                  <td><span className="document-count">▧ {registration.documentCount} files</span></td>
                   <td><StatusBadge value={registration.status} /></td>
                   <td><button className="road-button road-button-secondary" onClick={() => setSelectedRegistration(registration)}>Review Application</button></td>
                 </tr>
