@@ -12,6 +12,7 @@ import inspectionRoutes from './src/routes/inspectionRoutes.js';
 import complaintRoutes from './src/routes/complaintRoutes.js';
 import restorationRoutes from './src/routes/restorationRoutes.js';
 import analyticsRoutes from './src/routes/analyticsRoutes.js';
+import notificationRoutes from './src/routes/notificationRoutes.js';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/inspections', inspectionRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/restorations', restorationRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 // Public departments route for registration form
 app.use('/api/departments', async (req, res) => {
     try {
