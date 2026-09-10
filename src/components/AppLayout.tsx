@@ -7,7 +7,7 @@ import styles from './AppLayout.module.css';
 
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { currentUser, logout } = useApp();
+  const { currentUser, logout, notifications } = useApp();
   const navigate = useNavigate();
 
   if (!currentUser) return null;
@@ -15,6 +15,10 @@ function AppLayout() {
   const userNavigation = navigationItems.filter((item) =>
     item.roles.includes(currentUser.role),
   );
+  const unreadCount = notifications.filter(
+    (item) => (!item.role || item.role === currentUser.role) && !item.read,
+  ).length;
+
   function handleLogout() {
     logout();
     navigate('/login');
@@ -90,6 +94,15 @@ function AppLayout() {
           </div>
 
           <div className={styles.topbarActions}>
+            <NavLink
+              className={styles.notificationLink}
+              to="/notifications"
+              aria-label="Notifications"
+            >
+              ◌
+              {unreadCount > 0 && <span>{unreadCount}</span>}
+            </NavLink>
+
             <div className={styles.userCard}>
               <div className={styles.avatar}>{getInitials(currentUser.name)}</div>
               <div className={styles.userMeta}>

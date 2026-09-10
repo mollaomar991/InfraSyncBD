@@ -3,7 +3,6 @@ import {
   MapContainer,
   Popup,
   TileLayer,
-  Polyline
 } from 'react-leaflet';
 import type { Project } from '../types';
 import ProgressBar from './ProgressBar';
@@ -13,7 +12,6 @@ import styles from './ProjectMap.module.css';
 interface ProjectMapProps {
   projects: Project[];
   compact?: boolean;
-  showConflicts?: boolean;
 }
 
 const dhakaCenter: [number, number] = [23.8103, 90.4125];
@@ -35,11 +33,7 @@ function projectColor(type: string) {
   return category ? categoryColors[category] : '#64748b';
 }
 
-function ProjectMap({
-  projects,
-  compact = false,
-  showConflicts = false,
-}: ProjectMapProps) {
+function ProjectMap({ projects, compact = false }: ProjectMapProps) {
   const heightClass = compact ? `${styles.map} map-compact` : styles.map;
 
   return (
@@ -51,16 +45,22 @@ function ProjectMap({
         className={heightClass}
       >
         <TileLayer
-          attribution='&copy; Google Maps'
-          url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-          maxZoom={21}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {projects.map((project) => {
-          const isPolyline = project.geometryType === 'polyline' && project.coordinates && project.coordinates.length > 1;
-          const color = projectColor(project.type);
-          
-          const popupContent = (
+        {projects.map((project) => (
+          <CircleMarker
+            key={project.id}
+            center={[project.latitude, project.longitude]}
+            radius={project.conflictLevel === 'High' ? 12 : 9}
+            pathOptions={{
+              color: '#ffffff',
+              weight: 3,
+              fillColor: projectColor(project.type),
+              fillOpacity: 0.95,
+            }}
+          >
             <Popup minWidth={260}>
               <div className="map-popup">
                 <span className="map-popup-id">{project.id}</span>
@@ -70,47 +70,13 @@ function ProjectMap({
                 </p>
                 <div className="map-popup-status">
                   <StatusBadge status={project.status} />
-                  {showConflicts && (
-                    <StatusBadge status={`${project.conflictLevel} conflict`} />
-                  )}
+                  <StatusBadge status={`${project.conflictLevel} conflict`} />
                 </div>
                 <ProgressBar value={project.progress} compact />
               </div>
             </Popup>
-          );
-
-          if (isPolyline) {
-            return (
-              <Polyline
-                key={project.id}
-                positions={project.coordinates!}
-                pathOptions={{
-                  color: color,
-                  weight: 5,
-                  opacity: 0.9,
-                }}
-              >
-                {popupContent}
-              </Polyline>
-            );
-          }
-
-          return (
-            <CircleMarker
-              key={project.id}
-              center={[project.latitude, project.longitude]}
-              radius={showConflicts && project.conflictLevel === 'High' ? 12 : 9}
-              pathOptions={{
-                color: '#ffffff',
-                weight: 3,
-                fillColor: color,
-                fillOpacity: 0.95,
-              }}
-            >
-              {popupContent}
-            </CircleMarker>
-          );
-        })}
+          </CircleMarker>
+        ))}
       </MapContainer>
 
       <div className={styles.legend}>
