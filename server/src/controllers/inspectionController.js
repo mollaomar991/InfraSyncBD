@@ -61,8 +61,20 @@ export const saveInspectionResult = async (req, res) => {
                 );
             }
         }
+
+        // Rework logic: If failed, update project and milestone
+        if (result === 'failed') {
+            const [inspectionRows] = await pool.query(`SELECT project_id, milestone_id FROM inspections WHERE inspection_id = ?`, [id]);
+            if (inspectionRows.length > 0) {
+                const { project_id, milestone_id } = inspectionRows[0];
+                await pool.query(`UPDATE projects SET status = 'rework_required' WHERE project_id = ?`, [project_id]);
+                if (milestone_id) {
+                    await pool.query(`UPDATE project_milestones SET status = 'rework_required' WHERE milestone_id = ?`, [milestone_id]);
+                }
+            }
+        }
         
-        res.json({ success: true, message: 'Inspection result saved' });
+        res.json({ success: true, message: 'Inspection result saved. ' + (result === 'failed' ? 'Rework order issued.' : '') });
     } catch (error) {
         console.error('Error saving inspection result:', error);
         res.status(500).json({ success: false, message: 'Server error' });
