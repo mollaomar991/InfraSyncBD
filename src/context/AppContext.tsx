@@ -73,13 +73,13 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  currentUser: 'infrasync.mosh.v1.currentUser',
-  users: 'infrasync.mosh.v1.users',
-  departments: 'infrasync.mosh.v1.departments',
-  projects: 'infrasync.mosh.v1.projects',
-  complaints: 'infrasync.mosh.v1.complaints',
-  registrations: 'infrasync.mosh.v1.registrations',
-  notifications: 'infrasync.mosh.v1.notifications',
+  currentUser: 'infrasync.mosh.v2.currentUser',
+  users: 'infrasync.mosh.v2.users',
+  departments: 'infrasync.mosh.v2.departments',
+  projects: 'infrasync.mosh.v2.projects',
+  complaints: 'infrasync.mosh.v2.complaints',
+  registrations: 'infrasync.mosh.v2.registrations',
+  notifications: 'infrasync.mosh.v2.notifications',
 };
 
 function readStorage<T>(key: string, fallback: T): T {
