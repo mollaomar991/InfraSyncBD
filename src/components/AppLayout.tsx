@@ -58,6 +58,7 @@ function AppLayout() {
             <NavLink
               key={`${item.path}-${item.label}`}
               to={item.path}
+              end
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
