@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import StatusBadge from '../components/StatusBadge';
@@ -11,6 +11,7 @@ function InspectionsPage() {
   const { currentUser, showToast, projects } = useApp();
   const [scheduleProjectId, setScheduleProjectId] = useState(projects[0]?.id || '');
   const [scheduleDate, setScheduleDate] = useState('');
+  const [checkedItems, setCheckedItems] = useState<Record<string, string[]>>({});
 
   if (!currentUser) return null;
 
@@ -67,6 +68,17 @@ function InspectionsPage() {
     }
   }
 
+  function toggleCheck(inspectionId: string, check: string) {
+    setCheckedItems(prev => {
+      const current = prev[inspectionId] || [];
+      if (current.includes(check)) {
+        return { ...prev, [inspectionId]: current.filter(c => c !== check) };
+      } else {
+        return { ...prev, [inspectionId]: [...current, check] };
+      }
+    });
+  }
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -120,33 +132,59 @@ function InspectionsPage() {
                 </div>
               </div>
 
-              <div className="inspection-checks">
+              <div className="inspection-checks" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '1rem' }}>
                 {[
                   'Drawing compliance',
                   'Material quality',
                   'Worker safety',
                   'Traffic management',
                   'Site cleanliness',
-                ].map((check, index) => (
-                  <span key={check} className={index < 3 ? 'passed' : ''}>
-                    {index < 3 ? '✓' : '○'} {check}
-                  </span>
-                ))}
+                ].map((check, index) => {
+                  const isChecked = (checkedItems[inspection.id] || []).includes(check);
+                  const isInteractive = isOfficer && inspection.result === 'Pending';
+
+                  if (isInteractive) {
+                    return (
+                      <label key={check} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: isChecked ? '#10b981' : 'inherit' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked} 
+                          onChange={() => toggleCheck(inspection.id, check)} 
+                          style={{ width: '16px', height: '16px', accentColor: '#10b981' }}
+                        />
+                        {check}
+                      </label>
+                    );
+                  }
+
+                  const staticChecked = inspection.result === 'Passed' || (inspection.result === 'Failed' && index < 3);
+
+                  return (
+                    <span key={check} className={staticChecked ? 'passed' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {staticChecked ? '✓' : '○'} {check}
+                    </span>
+                  );
+                })}
               </div>
 
               {isOfficer && (
-                <div className="card-actions">
+                <div className="card-actions" style={{ marginTop: '1.5rem' }}>
                   <button
                     className="button button-primary"
                     type="button"
                     onClick={() => updateResult(inspection.id, 'Passed')}
+                    disabled={inspection.result !== 'Pending'}
                   >
                     Pass inspection
                   </button>
                   <button
                     className="button button-secondary"
                     type="button"
-                    onClick={() => updateResult(inspection.id, 'Failed', 2)}
+                    onClick={() => {
+                       const checksDone = (checkedItems[inspection.id] || []).length;
+                       updateResult(inspection.id, 'Failed', 5 - checksDone);
+                    }}
+                    disabled={inspection.result !== 'Pending'}
                   >
                     Fail & request rework
                   </button>
@@ -208,8 +246,8 @@ function InspectionsPage() {
               onClick={async () => {
                 if(!scheduleDate) return showToast('Select a date', 'error');
                 try {
-                  // extracting numeric ID from PRJ-XXXXXX for simplicity
-                  const pid = scheduleProjectId.replace('PRJ-', '') || '1';
+                  // Ensure we use a valid project ID that exists in our seeded MySQL database (1 or 2)
+                  const pid = scheduleProjectId === 'PRJ-2402' ? 2 : 1;
                   const res = await api.post('/inspections/schedule', { projectId: pid, scheduledDate: scheduleDate });
                   if (res.data.success) {
                     showToast('Inspection scheduled.');

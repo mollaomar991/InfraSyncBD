@@ -1,17 +1,15 @@
+import { useEffect, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
-import { conflicts, contractors, inspections } from '../data/mockData';
 import { formatCurrency } from '../utils';
 import api from '../api/axiosClient';
 
 function ReportsPage() {
-  const { projects, complaints } = useApp();
-  const [analytics, setAnalytics] = import('react').then(m => m.useState) ? null as any : null; // Hack to use hooks if missing
-  // Actually we need useState and useEffect
-  const [data, setData] = (require('react') as any).useState(null);
-  const [stats, setStats] = (require('react') as any).useState({
+  const { projects, complaints, conflicts, contractors, inspections } = useApp();
+  
+  const [stats, setStats] = useState({
       totalProjects: projects.length,
       activeProjects: 0,
       delayedProjects: projects.filter((project) => project.status === 'Delayed').length,
@@ -22,19 +20,19 @@ function ReportsPage() {
       failedInspections: inspections.filter((i) => i.result === 'Failed').length
   });
 
-  (require('react') as any).useEffect(() => {
+  useEffect(() => {
      api.get('/analytics').then(res => {
         if(res.data.success) {
            const d = res.data.data;
            setStats({
-               totalProjects: d.projects.totalProjects || 0,
-               activeProjects: d.projects.activeProjects || 0,
-               delayedProjects: d.projects.delayedProjects || 0,
-               reworkProjects: d.projects.reworkProjects || 0,
-               totalComplaints: d.complaints.totalComplaints || 0,
-               openComplaints: d.complaints.openComplaints || 0,
-               totalInspections: d.inspections.totalInspections || 0,
-               failedInspections: d.inspections.failedInspections || 0
+               totalProjects: d.projects?.totalProjects || 0,
+               activeProjects: d.projects?.activeProjects || 0,
+               delayedProjects: d.projects?.delayedProjects || 0,
+               reworkProjects: d.projects?.reworkProjects || 0,
+               totalComplaints: d.complaints?.totalComplaints || 0,
+               openComplaints: d.complaints?.openComplaints || 0,
+               totalInspections: d.inspections?.totalInspections || 0,
+               failedInspections: d.inspections?.failedInspections || 0
            });
         }
      }).catch(console.error);

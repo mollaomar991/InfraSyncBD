@@ -3,7 +3,10 @@ import {
   MapContainer,
   Popup,
   TileLayer,
+  Polyline,
+  useMap,
 } from 'react-leaflet';
+import { useEffect } from 'react';
 import type { Project } from '../types';
 import ProgressBar from './ProgressBar';
 import StatusBadge from './StatusBadge';
@@ -33,6 +36,23 @@ function projectColor(type: string) {
   return category ? categoryColors[category] : '#64748b';
 }
 
+function MapCenterUpdater({ projects }: { projects: Project[] }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (projects.length === 1 && Array.isArray(projects[0].coordinates) && projects[0].coordinates.length > 0) {
+      const coords = projects[0].coordinates;
+      // If polyline, use first point. If point, use it directly.
+      const target = typeof coords[0] === 'number' ? coords : coords[0];
+      map.flyTo(target as [number, number], 16, { duration: 1.5 });
+    } else if (projects.length > 1) {
+      map.flyTo(dhakaCenter, 12, { duration: 1.5 });
+    }
+  }, [projects, map]);
+  
+  return null;
+}
+
 function ProjectMap({ projects, compact = false }: ProjectMapProps) {
   const heightClass = compact ? `${styles.map} map-compact` : styles.map;
 
@@ -44,39 +64,65 @@ function ProjectMap({ projects, compact = false }: ProjectMapProps) {
         scrollWheelZoom
         className={heightClass}
       >
+        <MapCenterUpdater projects={projects} />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; Google Maps'
+          url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+          maxZoom={21}
         />
 
-        {projects.map((project) => (
-          <CircleMarker
-            key={project.id}
-            center={[project.latitude, project.longitude]}
-            radius={project.conflictLevel === 'High' ? 12 : 9}
-            pathOptions={{
-              color: '#ffffff',
-              weight: 3,
-              fillColor: projectColor(project.type),
-              fillOpacity: 0.95,
-            }}
-          >
-            <Popup minWidth={260}>
-              <div className="map-popup">
-                <span className="map-popup-id">{project.id}</span>
-                <h3>{project.name}</h3>
-                <p>
-                  {project.road}, {project.area}
-                </p>
-                <div className="map-popup-status">
-                  <StatusBadge status={project.status} />
-                  <StatusBadge status={`${project.conflictLevel} conflict`} />
-                </div>
-                <ProgressBar value={project.progress} compact />
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
+        {projects.map((project) => {
+          const color = projectColor(project.type);
+          const hasPolyline = project.geometryType === 'polyline' && Array.isArray(project.coordinates) && project.coordinates.length > 1;
+
+          return (
+            <div key={project.id}>
+              {hasPolyline ? (
+                <Polyline
+                  positions={project.coordinates!}
+                  pathOptions={{ color, weight: project.conflictLevel === 'High' ? 6 : 4, opacity: 0.9 }}
+                >
+                  <Popup minWidth={260}>
+                    <div className="map-popup">
+                      <span className="map-popup-id">{project.id}</span>
+                      <h3>{project.name}</h3>
+                      <p>{project.road}, {project.area}</p>
+                      <div className="map-popup-status">
+                        <StatusBadge status={project.status} />
+                        <StatusBadge status={`${project.conflictLevel} conflict`} />
+                      </div>
+                      <ProgressBar value={project.progress} compact />
+                    </div>
+                  </Popup>
+                </Polyline>
+              ) : (
+                <CircleMarker
+                  center={project.coordinates?.[0] || [project.latitude, project.longitude]}
+                  radius={project.conflictLevel === 'High' ? 12 : 9}
+                  pathOptions={{
+                    color: '#ffffff',
+                    weight: 3,
+                    fillColor: color,
+                    fillOpacity: 0.95,
+                  }}
+                >
+                  <Popup minWidth={260}>
+                    <div className="map-popup">
+                      <span className="map-popup-id">{project.id}</span>
+                      <h3>{project.name}</h3>
+                      <p>{project.road}, {project.area}</p>
+                      <div className="map-popup-status">
+                        <StatusBadge status={project.status} />
+                        <StatusBadge status={`${project.conflictLevel} conflict`} />
+                      </div>
+                      <ProgressBar value={project.progress} compact />
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              )}
+            </div>
+          );
+        })}
       </MapContainer>
 
       <div className={styles.legend}>

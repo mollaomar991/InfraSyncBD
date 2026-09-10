@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
+import api from '../api/axiosClient';
 
 interface CoordinationRequest {
   id: string;
@@ -15,57 +16,68 @@ interface CoordinationRequest {
   status: 'Pending' | 'Accepted' | 'Change Requested' | 'Rejected';
 }
 
-const initialRequests: CoordinationRequest[] = [
-  {
-    id: 'CRD-501',
-    project: 'Mirpur 12 Road Reconstruction',
-    sender: 'Road Department',
-    receiver: 'Dhaka WASA',
-    proposedDate: '2026-09-15',
-    requiredResponse: '2026-08-18',
-    comment: 'Confirm pipeline completion before final road construction.',
-    status: 'Pending',
-  },
-  {
-    id: 'CRD-502',
-    project: 'Mirpur 12 Road Reconstruction',
-    sender: 'Road Department',
-    receiver: 'Gas Authority',
-    proposedDate: '2026-09-15',
-    requiredResponse: '2026-08-18',
-    comment: 'Review the utility corridor and planned maintenance window.',
-    status: 'Accepted',
-  },
-  {
-    id: 'CRD-503',
-    project: 'Dhanmondi Fiber Corridor',
-    sender: 'Fiber Authority',
-    receiver: 'Road Department',
-    proposedDate: '2026-10-10',
-    requiredResponse: '2026-08-20',
-    comment: 'Fiber installation should finish before resurfacing.',
-    status: 'Change Requested',
-  },
-];
-
 function CoordinationPage() {
-  const [requests, setRequests] = useState(initialRequests);
+  const [requests, setRequests] = useState<CoordinationRequest[]>([]);
   const [comment, setComment] = useState('');
   const { showToast } = useApp();
 
-  function respond(
+  // Fetch coordination requests from real API
+  useEffect(() => {
+    async function fetchRequests() {
+      try {
+        const res = await api.get('/coordination');
+        if (res.data.success) {
+          // Map database fields to frontend type
+          const mapped = res.data.data.map((row: any) => ({
+            id: row.coordination_id.toString(),
+            project: row.project_name || 'Unknown Project',
+            sender: row.sender_department || 'Unknown',
+            receiver: row.receiver_department || 'Unknown',
+            proposedDate: row.suggested_start_date ? new Date(row.suggested_start_date).toLocaleDateString() : '',
+            requiredResponse: row.suggested_end_date ? new Date(row.suggested_end_date).toLocaleDateString() : '',
+            comment: row.notes || '',
+            status: row.status === 'pending' ? 'Pending'
+              : row.status === 'accepted' ? 'Accepted'
+              : row.status === 'changes_requested' ? 'Change Requested'
+              : 'Rejected',
+          }));
+          setRequests(mapped);
+        }
+      } catch (error) {
+        console.error('Error fetching coordination requests:', error);
+      }
+    }
+    fetchRequests();
+  }, []);
+
+  async function respond(
     requestId: string,
     status: CoordinationRequest['status'],
   ) {
-    setRequests((items) =>
-      items.map((item) =>
-        item.id === requestId
-          ? { ...item, status, comment: comment || item.comment }
-          : item,
-      ),
-    );
-    setComment('');
-    showToast(`Coordination response saved as ${status}.`, 'info');
+    try {
+      // Map frontend status back to database enum
+      const dbStatus = status === 'Accepted' ? 'accepted'
+        : status === 'Change Requested' ? 'changes_requested'
+        : 'rejected';
+
+      await api.put(`/coordination/${requestId}/respond`, {
+        status: dbStatus,
+        notes: comment || undefined,
+      });
+
+      setRequests((items) =>
+        items.map((item) =>
+          item.id === requestId
+            ? { ...item, status, comment: comment || item.comment }
+            : item,
+        ),
+      );
+      setComment('');
+      showToast(`Coordination response saved as ${status}.`, 'info');
+    } catch (error) {
+      console.error('Error responding to coordination:', error);
+      showToast('Failed to respond.', 'error');
+    }
   }
 
   return (

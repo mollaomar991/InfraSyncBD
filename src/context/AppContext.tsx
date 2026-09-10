@@ -6,14 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import {
-  complaints as initialComplaints,
-  departments as initialDepartments,
-  notifications as initialNotifications,
-  projects as initialProjects,
-  registrations as initialRegistrations,
-  users as initialUsers,
-} from '../data/mockData';
+// Removed mockData imports
 import api from '../api/axiosClient';
 import type {
   AccountStatus,
@@ -28,6 +21,10 @@ import type {
   Role,
   ToastMessage,
   User,
+  Approval,
+  Conflict,
+  Inspection,
+  Contractor
 } from '../types';
 
 interface LoginResult {
@@ -50,6 +47,10 @@ interface AppContextValue {
   complaints: Complaint[];
   registrations: Registration[];
   notifications: NotificationItem[];
+  approvals: Approval[];
+  conflicts: Conflict[];
+  inspections: Inspection[];
+  contractors: Contractor[];
   toast: ToastMessage | null;
   login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => void;
@@ -99,70 +100,156 @@ export function AppProvider({ children }: AppProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(() =>
     readStorage<User | null>(STORAGE_KEYS.currentUser, null),
   );
-  const [users, setUsers] = useState<User[]>(() =>
-    readStorage(STORAGE_KEYS.users, initialUsers),
-  );
-  const [departments, setDepartments] = useState<Department[]>(() =>
-    readStorage(STORAGE_KEYS.departments, initialDepartments),
-  );
-  const [projects, setProjects] = useState<Project[]>(() =>
-    readStorage(STORAGE_KEYS.projects, initialProjects),
-  );
-  const [complaints, setComplaints] = useState<Complaint[]>(() =>
-    readStorage(STORAGE_KEYS.complaints, initialComplaints),
-  );
-  const [registrations, setRegistrations] = useState<Registration[]>(() =>
-    readStorage(STORAGE_KEYS.registrations, initialRegistrations),
-  );
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    readStorage(STORAGE_KEYS.notifications, initialNotifications),
-  );
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [inspections, setInspections] = useState<Inspection[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
-  // Sync to localStorage for offline fallback
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-  }, [users]);
+    // Initial fetch
+    fetchMe();
+    fetchDepartments();
+    fetchProjects();
+    fetchApprovals();
+    fetchConflicts();
+    fetchInspections();
+    fetchContractors();
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEYS.departments,
-      JSON.stringify(departments),
-    );
-  }, [departments]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.projects, JSON.stringify(projects));
-  }, [projects]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.complaints, JSON.stringify(complaints));
-  }, [complaints]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEYS.registrations,
-      JSON.stringify(registrations),
-    );
-  }, [registrations]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEYS.notifications,
-      JSON.stringify(notifications),
-    );
-  }, [notifications]);
-
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(
-        STORAGE_KEYS.currentUser,
-        JSON.stringify(currentUser),
-      );
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.currentUser);
+    if (currentUser?.role === 'super_admin') {
+      fetchUsers();
+      fetchPendingVerifications();
     }
   }, [currentUser]);
+
+  async function fetchMe() {
+    const token = localStorage.getItem('infrasync_token');
+    if (!token) return;
+    try {
+      const res = await api.get('/auth/me');
+      if (res.data.success) setCurrentUser(res.data.user);
+    } catch (e) {
+      console.error(e);
+      localStorage.removeItem('infrasync_token');
+    }
+  }
+
+  async function fetchDepartments() {
+    try {
+      const res = await api.get('/departments');
+      if (res.data.success) {
+        setDepartments(res.data.data.map((d: any) => ({
+          id: d.department_id.toString(),
+          name: d.department_name,
+          type: d.department_type,
+        })));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchUsers() {
+    try {
+      const res = await api.get('/admin/users');
+      if (res.data.success) setUsers(res.data.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchPendingVerifications() {
+    try {
+      const res = await api.get('/admin/pending-verifications');
+      if (res.data.success) setRegistrations(res.data.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchProjects() {
+    try {
+      const res = await api.get('/projects');
+      if (res.data.success) {
+        // Map database fields to frontend Project interface
+        const mapped = res.data.data.map((p: any) => ({
+          id: p.project_code || `PRJ-${p.project_id}`,
+          name: p.project_name,
+          type: p.project_type || 'Road Construction',
+          department: p.department_name || 'Unknown',
+          contractor: 'Not assigned',
+          area: p.area_name || 'N/A',
+          road: p.road_name || 'N/A',
+          latitude: p.latitude || 23.8103,
+          longitude: p.longitude || 90.4125,
+          geometryType: p.geometry_type || 'point',
+          coordinates: p.coordinates_json ? (typeof p.coordinates_json === 'string' ? JSON.parse(p.coordinates_json) : p.coordinates_json) : undefined,
+          startDate: p.start_date || '',
+          endDate: p.target_completion_date || '',
+          budget: p.budget || 0,
+          progress: p.progress_percentage || 0,
+          plannedProgress: 0,
+          status: p.status || 'draft',
+          roadStatus: 'Open',
+          conflictLevel: 'None',
+          approvalStatus: p.status || 'draft',
+          description: p.description || '',
+        }));
+        setProjects(mapped);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchApprovals() {
+    try {
+      const res = await api.get('/approvals');
+      if (res.data.success) setApprovals(res.data.data);
+    } catch (e) { console.error(e); }
+  }
+
+  async function fetchConflicts() {
+    try {
+      const res = await api.get('/conflicts');
+      if (res.data.success) {
+        const mapped = res.data.data.map((c: any) => ({
+          id: `CONF-${c.conflict_id}`,
+          project1: c.project_name,
+          project2: c.conflicting_project_name,
+          department1: c.project_department,
+          department2: c.conflicting_department,
+          type: c.conflict_type || 'Schedule Overlap',
+          status: c.resolution_status === 'resolved' ? 'Resolved' : 'Active',
+          description: c.resolution_notes || 'Conflict detected',
+          detectedDate: c.created_at
+        }));
+        setConflicts(mapped);
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function fetchInspections() {
+    try {
+      const res = await api.get('/inspections');
+      if (res.data.success) setInspections(res.data.data);
+    } catch (e) { console.error(e); }
+  }
+
+  async function fetchContractors() {
+    try {
+      const res = await api.get('/contractors');
+      if (res.data.success) setContractors(res.data.data);
+    } catch (e) { console.error(e); }
+  }
 
 
 
@@ -183,138 +270,52 @@ export function AppProvider({ children }: AppProviderProps) {
   // ── Module 1: Authentication (API-backed) ──────────────────────
 
   async function login(email: string, password: string): Promise<LoginResult> {
-    const matchingUser = users.find(
-      (user) =>
-        user.email.toLowerCase() === email.trim().toLowerCase(),
-    );
-
-    if (!matchingUser || matchingUser.password !== password) {
-      return {
-        success: false,
-        message: 'The email or password is incorrect.',
-      };
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      if (res.data.success) {
+        localStorage.setItem('infrasync_token', res.data.token);
+        setCurrentUser(res.data.user);
+        return { success: true, message: 'Login successful.', user: res.data.user };
+      }
+      return { success: false, message: 'Login failed' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Login failed' };
     }
-
-    if (matchingUser.accountStatus !== 'Active') {
-      return {
-        success: false,
-        message: `This account is currently ${matchingUser.accountStatus}.`,
-      };
-    }
-
-    setCurrentUser(matchingUser);
-    return { success: true, message: 'Login successful.', user: matchingUser };
   }
 
   function logout() {
+    localStorage.removeItem('infrasync_token');
     setCurrentUser(null);
     showToast('You have been signed out.', 'info');
   }
 
   async function register(input: RegistrationInput): Promise<RegisterResult> {
-    const normalizedEmail = input.email.trim().toLowerCase();
-    const emailExists = users.some(
-      (user) => user.email.toLowerCase() === normalizedEmail,
-    );
-
-    if (emailExists) {
-      return {
-        success: false,
-        message: 'An account with this email already exists.',
-      };
+    try {
+      const res = await api.post('/auth/register', input);
+      if (res.data.success) {
+        return { success: true, message: res.data.message, status: res.data.status };
+      }
+      return { success: false, message: 'Registration failed' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Registration failed' };
     }
-
-    const isCitizen = input.role === 'citizen';
-    const accountStatus: AccountStatus = isCitizen
-      ? 'Active'
-      : 'Pending Verification';
-    const organization =
-      input.role === 'department_officer'
-        ? input.department || 'Unassigned Department'
-        : input.role === 'contractor'
-          ? input.companyName || 'Contractor Company'
-          : 'Public User';
-
-    const newUser: User = {
-      id: `USR-${Date.now()}`,
-      name: input.name,
-      email: normalizedEmail,
-      password: input.password,
-      phone: input.phone,
-      role: input.role,
-      organization,
-      accountStatus,
-    };
-
-    setUsers((currentUsers) => [...currentUsers, newUser]);
-
-    if (!isCitizen) {
-      const newRegistration: Registration = {
-        id: `REG-${Date.now()}`,
-        role:
-          input.role === 'department_officer'
-            ? 'Department Officer'
-            : 'Contractor',
-        name: input.name,
-        email: normalizedEmail,
-        organization,
-        designation:
-          input.role === 'department_officer'
-            ? input.designation || 'Department Officer'
-            : 'Contractor Company',
-        submittedDate: new Date().toISOString().slice(0, 10),
-        documentCount: input.role === 'department_officer' ? 3 : 4,
-        status: 'Pending Verification',
-      };
-
-      setRegistrations((currentRegistrations) => [
-        newRegistration,
-        ...currentRegistrations,
-      ]);
-    }
-
-    setNotifications((currentNotifications) => [
-      {
-        id: `NTF-${Date.now()}`,
-        title: isCitizen ? 'Citizen account created' : 'Verification submitted',
-        message: isCitizen
-          ? `${input.name} can now sign in to the citizen portal.`
-          : `${input.name} is waiting for Super Admin verification.`,
-        time: 'Just now',
-        read: false,
-        role: isCitizen ? 'citizen' : 'super_admin',
-      },
-      ...currentNotifications,
-    ]);
-
-    return {
-      success: true,
-      message: isCitizen
-        ? 'Your citizen account is active. You can sign in now.'
-        : 'Registration submitted. Wait for Super Admin verification.',
-      status: accountStatus,
-    };
   }
 
   // ── Module 2: Project Management (API-backed) ──────────────────
 
   async function addProject(input: ProjectInput): Promise<Project> {
-    const project: Project = {
-      id: `PRJ-${Date.now().toString().slice(-6)}`,
-      ...input,
-      department: currentUser?.organization || 'Road Department',
-      contractor: 'Not assigned',
-      progress: 0,
-      plannedProgress: 0,
-      status: 'Draft',
-      roadStatus: 'Open',
-      conflictLevel: 'None',
-      approvalStatus: 'Not submitted',
-    };
-
-    setProjects((currentProjects) => [project, ...currentProjects]);
-    showToast('Project saved as a draft.');
-    return project;
+    try {
+      const res = await api.post('/projects', input);
+      if (res.data.success) {
+        fetchProjects();
+        showToast('Project created successfully!', 'success');
+        return res.data.data;
+      }
+      throw new Error('Failed to create project');
+    } catch (error: any) {
+      showToast(error.response?.data?.message || 'Failed to create project', 'error');
+      throw error;
+    }
   }
 
   async function updateProjectProgress(projectId: string, payload: any): Promise<void> {
@@ -347,27 +348,15 @@ export function AppProvider({ children }: AppProviderProps) {
     registrationId: string,
     status: AccountStatus,
   ): Promise<void> {
-    const registration = registrations.find(
-      (item) => item.id === registrationId,
-    );
-
-    setRegistrations((currentRegistrations) =>
-      currentRegistrations.map((item) =>
-        item.id === registrationId ? { ...item, status } : item,
-      ),
-    );
-
-    if (registration) {
-      setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          user.email === registration.email
-            ? { ...user, accountStatus: status }
-            : user,
-        ),
-      );
+    try {
+      const dbStatus = status === 'Active' ? 'active' : 'rejected';
+      await api.put(`/admin/verify-user/${registrationId}`, { status: dbStatus });
+      fetchPendingVerifications();
+      fetchUsers();
+      showToast(`Registration status changed to ${status}.`, 'info');
+    } catch (error) {
+      showToast('Error verifying user', 'error');
     }
-
-    showToast(`Registration status changed to ${status}.`, 'info');
   }
 
   // ── Remaining functions (unchanged, still localStorage) ────────
@@ -380,13 +369,14 @@ export function AppProvider({ children }: AppProviderProps) {
     showToast(`${department.name} added to the official directory.`);
   }
 
-  function updateUserStatus(userId: string, status: AccountStatus) {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === userId ? { ...user, accountStatus: status } : user,
-      ),
-    );
-    showToast(`User account changed to ${status}.`, 'info');
+  async function updateUserStatus(userId: string, status: AccountStatus) {
+    try {
+      await api.put(`/admin/users/${userId}/status`, { status });
+      fetchUsers();
+      showToast(`User account changed to ${status}.`, 'info');
+    } catch (error) {
+      showToast('Error updating status', 'error');
+    }
   }
 
   function addComplaint(input: ComplaintInput): Complaint {
@@ -430,6 +420,10 @@ export function AppProvider({ children }: AppProviderProps) {
     complaints,
     registrations,
     notifications,
+    approvals,
+    conflicts,
+    inspections,
+    contractors,
     toast,
     login,
     logout,

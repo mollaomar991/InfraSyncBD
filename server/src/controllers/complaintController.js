@@ -11,10 +11,13 @@ export const submitComplaint = async (req, res) => {
 
         const ticketNo = `CMP-${Date.now().toString().slice(-6)}`;
         
-        // Ensure projectId is either an integer or null, not 'null' string
+        // Ensure projectId is translated to the internal integer project_id
         let validProjectId = null;
         if (projectId && projectId !== 'null' && projectId !== 'undefined') {
-            validProjectId = parseInt(projectId, 10);
+            const [proj] = await pool.query('SELECT project_id FROM projects WHERE project_code = ? OR project_id = ? LIMIT 1', [projectId, projectId]);
+            if (proj.length > 0) {
+                validProjectId = proj[0].project_id;
+            }
         }
 
         const [result] = await pool.query(

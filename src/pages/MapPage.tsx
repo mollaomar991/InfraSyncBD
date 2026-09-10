@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ListGroup from '../components/ListGroup';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
@@ -7,8 +8,9 @@ import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 
 function MapPage() {
+  const [searchParams] = useSearchParams();
   const [category, setCategory] = useState('All');
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState(searchParams.get('project') || '');
   const { projects, currentUser } = useApp();
   const canSeeConflicts =
     currentUser?.role === 'super_admin' ||
@@ -26,7 +28,7 @@ function MapPage() {
         const query = searchText.toLowerCase().trim();
         const matchesSearch =
           !query ||
-          `${project.name} ${project.road} ${project.area}`
+          `${project.id} ${project.name} ${project.road} ${project.area}`
             .toLowerCase()
             .includes(query);
 

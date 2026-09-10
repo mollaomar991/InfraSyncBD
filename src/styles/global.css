@@ -3545,3 +3545,52 @@ textarea {
     display: none;
   }
 }
+
+/* Complaint Workflow styles */
+.vertical-workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+  position: relative;
+}
+
+.vertical-workflow::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 16px;
+  bottom: 24px;
+  width: 2px;
+  background-color: var(--gray-200, #e2e8f0);
+  z-index: 1;
+}
+
+.vertical-workflow > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 2;
+}
+
+.vertical-workflow > div > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--white, #ffffff);
+  border: 2px solid var(--primary-500, #f97316);
+  color: var(--primary-600, #ea580c);
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.vertical-workflow > div > strong {
+  font-size: 15px;
+  color: var(--gray-800, #1e293b);
+  font-weight: 500;
+}

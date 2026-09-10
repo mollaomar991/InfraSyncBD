@@ -7,7 +7,7 @@ import { useApp } from '../context/AppContext';
 import api from '../api/axiosClient';
 const initialForm = {
   projectId: '',
-  category: 'Road Damage',
+  category: 'road_damage',
   locationAddress: '',
   description: '',
 };
@@ -15,7 +15,7 @@ const initialForm = {
 function SubmitComplaintPage() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
-  const { projects, addComplaint } = useApp();
+  const { projects, showToast } = useApp();
   const navigate = useNavigate();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -66,7 +66,7 @@ function SubmitComplaintPage() {
               >
                 <option value="">Select a public project</option>
                 {projects.map((project) => (
-                  <option key={project.id} value={project.id.replace('PRJ-', '') || '1'}>
+                  <option key={project.id} value={project.id}>
                     {project.name} — {project.area}
                   </option>
                 ))}
@@ -81,15 +81,15 @@ function SubmitComplaintPage() {
                   setForm((current) => ({ ...current, category: event.target.value }))
                 }
               >
-                <option>Road Damage</option>
-                <option>Dust</option>
-                <option>Noise</option>
-                <option>Waterlogging</option>
-                <option>Unsafe Construction</option>
-                <option>Project Delay</option>
-                <option>Illegal Excavation</option>
-                <option>Traffic Blockage</option>
-                <option>Construction Waste</option>
+                <option value="road_damage">Road Damage</option>
+                <option value="dust_pollution">Dust</option>
+                <option value="noise_violation">Noise</option>
+                <option value="waterlogging">Waterlogging</option>
+                <option value="unsafe_construction">Unsafe Construction</option>
+                <option value="project_delay">Project Delay</option>
+                <option value="illegal_excavation">Illegal Excavation</option>
+                <option value="traffic_blockage">Traffic Blockage</option>
+                <option value="construction_waste">Construction Waste</option>
               </select>
             </label>
 

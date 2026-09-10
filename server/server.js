@@ -13,6 +13,10 @@ import complaintRoutes from './src/routes/complaintRoutes.js';
 import restorationRoutes from './src/routes/restorationRoutes.js';
 import analyticsRoutes from './src/routes/analyticsRoutes.js';
 import notificationRoutes from './src/routes/notificationRoutes.js';
+import conflictRoutes from './src/routes/conflictRoutes.js';
+import coordinationRoutes from './src/routes/coordinationRoutes.js';
+import approvalRoutes from './src/routes/approvalRoutes.js';
+import contractorRoutes from './src/routes/contractorRoutes.js';
 
 const app = express();
 
@@ -29,6 +33,10 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/restorations', restorationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/conflicts', conflictRoutes);
+app.use('/api/coordination', coordinationRoutes);
+app.use('/api/approvals', approvalRoutes);
+app.use('/api/contractors', contractorRoutes);
 // Public departments route for registration form
 app.use('/api/departments', async (req, res) => {
     try {
