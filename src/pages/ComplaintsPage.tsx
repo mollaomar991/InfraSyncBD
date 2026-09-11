@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
@@ -11,13 +11,11 @@ function ComplaintsPage() {
   const [apiComplaints, setApiComplaints] = useState<any[]>([]);
   const { currentUser, showToast } = useApp();
 
-  if (!currentUser) return null;
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
 
-  import('react').then(({ useEffect }) => {
-    useEffect(() => {
-      fetchComplaints();
-    }, []);
-  });
+  if (!currentUser) return null;
 
   async function fetchComplaints() {
     try {

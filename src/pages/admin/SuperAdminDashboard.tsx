@@ -5,10 +5,9 @@ import ProgressBar from '../../components/ProgressBar';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import { useApp } from '../../context/AppContext';
-import { approvals, conflicts, contractors } from '../../data/mockData';
 
 function SuperAdminDashboard() {
-  const { users, projects, complaints, registrations } = useApp();
+  const { users, projects, complaints, registrations, approvals, conflicts, contractors } = useApp();
   const delayedProjects = projects.filter(
     (project) => project.status === 'Delayed',
   ).length;

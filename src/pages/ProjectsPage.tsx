@@ -171,7 +171,7 @@ function ProjectsPage() {
               >
                 View details
               </button>
-              <Link className="button button-ghost" to="/map">
+              <Link className="button button-ghost" to={`/map?project=${project.id}`}>
                 View on map
               </Link>
             </div>

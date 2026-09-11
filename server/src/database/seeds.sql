@@ -66,3 +66,19 @@ INSERT INTO officer_profiles (user_id, department_id, employee_id, designation, 
 (@o1, 1, 'EMP-RHD-01', 'Executive Engineer', 'RHD HQ', 'placeholder.jpg'),
 (@o2, 2, 'EMP-DNCC-02', 'Assistant Engineer', 'DNCC Zone 1', 'placeholder.jpg'),
 (@o3, 4, 'EMP-WASA-03', 'Sub-Divisional Engineer', 'WASA Bhaban', 'placeholder.jpg');
+
+-- 7. Insert Mock Projects
+INSERT INTO projects (project_code, project_name, project_type, department_id, created_by_officer_id, assigned_contractor_id, budget, start_date, target_completion_date, status) VALUES
+('PRJ-10001', 'Mirpur Road Repair', 'Road Maintenance', 1, 1, 1, 500000.00, '2026-01-01', '2026-12-31', 'ongoing'),
+('PRJ-10002', 'Gulshan Water Pipe Installation', 'Water Supply', 4, 3, 2, 800000.00, '2026-03-01', '2026-10-31', 'ongoing');
+
+-- 8. Insert Mock Inspections
+INSERT INTO inspections (project_id, inspector_officer_id, scheduled_date, result, engineer_remarks) VALUES
+(1, 1, '2026-09-15 10:00:00', 'pending', 'Initial quality check'),
+(2, 3, '2026-09-20 14:00:00', 'failed', 'Material quality does not meet standards');
+
+-- 9. Insert Mock Checklists
+INSERT INTO inspection_checklist_items (inspection_id, criteria_title, status) VALUES
+(2, 'Drawing compliance', 'pass'),
+(2, 'Material quality', 'fail'),
+(2, 'Worker safety', 'pass');

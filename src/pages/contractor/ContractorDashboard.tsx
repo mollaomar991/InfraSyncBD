@@ -5,10 +5,10 @@ import ProgressBar from '../../components/ProgressBar';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import { useApp } from '../../context/AppContext';
-import { inspections } from '../../data/mockData';
+import { formatCurrency } from '../../utils';
 
 function ContractorDashboard() {
-  const { currentUser, projects, complaints } = useApp();
+  const { currentUser, projects, complaints, inspections } = useApp();
   const assignedProjects = projects.filter(
     (project) => project.contractor === currentUser?.organization,
   );

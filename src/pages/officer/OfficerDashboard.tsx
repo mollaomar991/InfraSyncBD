@@ -5,11 +5,10 @@ import ProgressBar from '../../components/ProgressBar';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import { useApp } from '../../context/AppContext';
-import { approvals, conflicts, inspections } from '../../data/mockData';
 import { formatCurrency } from '../../utils';
 
 function OfficerDashboard() {
-  const { currentUser, projects, complaints } = useApp();
+  const { currentUser, projects, complaints, approvals, conflicts, inspections } = useApp();
   const departmentProjects = projects.filter(
     (project) => project.department === currentUser?.organization,
   );
