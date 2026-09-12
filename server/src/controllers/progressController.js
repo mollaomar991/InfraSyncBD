@@ -17,6 +17,15 @@ export const submitProgress = async (req, res) => {
         // If not a contractor, maybe it's an officer testing. Just use ID 1 for simplicity if not found.
         const contractorId = contractorRows.length > 0 ? contractorRows[0].contractor_id : 1;
         
+        // Translate PRJ-X to int ID
+        let validProjectId = projectId;
+        if (typeof projectId === 'string' && projectId.startsWith('PRJ-')) {
+            const [proj] = await pool.query('SELECT project_id FROM projects WHERE project_code = ? OR project_id = ? LIMIT 1', [projectId, projectId.replace('PRJ-', '')]);
+            if (proj.length > 0) {
+                validProjectId = proj[0].project_id;
+            }
+        }
+        
         const isDelayed = delayReason ? true : false;
         const updateDate = new Date().toISOString().split('T')[0];
 
@@ -24,13 +33,13 @@ export const submitProgress = async (req, res) => {
             `INSERT INTO progress_updates 
             (project_id, contractor_id, update_date, physical_progress_pct, financial_progress_pct, completed_work_summary, remaining_work_summary, photo_evidence_url, is_delayed, delay_reason) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [projectId, contractorId, updateDate, physicalProgress, financialProgress, completedWork, remainingWork, photoUrl, isDelayed, delayReason]
+            [validProjectId, contractorId, updateDate, physicalProgress, financialProgress, completedWork, remainingWork, photoUrl, isDelayed, delayReason]
         );
 
         // Simple logic to update the main project status/progress
         await pool.query(
             `UPDATE projects SET physical_progress_pct = ?, financial_progress_pct = ?, status = ? WHERE project_id = ?`,
-            [physicalProgress, financialProgress, isDelayed ? 'delayed' : 'ongoing', projectId]
+            [physicalProgress, financialProgress, isDelayed ? 'delayed' : 'ongoing', validProjectId]
         );
 
         res.status(201).json({ success: true, message: 'Progress updated successfully', progressId: result.insertId });

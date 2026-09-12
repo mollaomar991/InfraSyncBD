@@ -57,6 +57,7 @@ interface AppContextValue {
   register: (input: RegistrationInput) => Promise<RegisterResult>;
   addProject: (input: ProjectInput) => Promise<Project>;
   addDepartment: (department: Department) => void;
+  updateDepartment: (department: Department) => void;
   updateUserStatus: (userId: string, status: AccountStatus) => void;
   addComplaint: (input: ComplaintInput) => Complaint;
   updateRegistrationStatus: (
@@ -69,6 +70,7 @@ interface AppContextValue {
     status: Complaint['status'],
   ) => void;
   showToast: (message: string, type?: ToastMessage['type']) => void;
+  addNotification: (title: string, message: string, role?: Role) => void;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -105,12 +107,18 @@ export function AppProvider({ children }: AppProviderProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
+    readStorage<NotificationItem[]>(STORAGE_KEYS.notifications, [])
+  );
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.notifications, JSON.stringify(notifications));
+  }, [notifications]);
 
   useEffect(() => {
     // Initial fetch
@@ -121,6 +129,7 @@ export function AppProvider({ children }: AppProviderProps) {
     fetchConflicts();
     fetchInspections();
     fetchContractors();
+    fetchComplaints();
   }, []);
 
   useEffect(() => {
@@ -131,14 +140,21 @@ export function AppProvider({ children }: AppProviderProps) {
   }, [currentUser]);
 
   async function fetchMe() {
-    const token = localStorage.getItem('infrasync_token');
-    if (!token) return;
     try {
+      const token = localStorage.getItem('infrasync_token');
+      if (!token) return;
       const res = await api.get('/auth/me');
-      if (res.data.success) setCurrentUser(res.data.user);
-    } catch (e) {
-      console.error(e);
-      localStorage.removeItem('infrasync_token');
+      if (res.data.success) {
+        setCurrentUser(res.data.user);
+      } else {
+        logout();
+      }
+    } catch (error: any) {
+      console.error('fetchMe error:', error);
+      // Only logout if the token is invalid (401). Don't logout on network errors (e.g. server restart)
+      if (error.response && error.response.status === 401) {
+        logout();
+      }
     }
   }
 
@@ -150,6 +166,9 @@ export function AppProvider({ children }: AppProviderProps) {
           id: d.department_id.toString(),
           name: d.department_name,
           type: d.department_type,
+          office: d.office_address || '',
+          contact: d.contact_phone || '',
+          status: d.status === 'active' ? 'Active' : 'Inactive',
         })));
       }
     } catch (e) {
@@ -195,7 +214,7 @@ export function AppProvider({ children }: AppProviderProps) {
           startDate: p.start_date ? new Date(p.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
           endDate: p.target_completion_date ? new Date(p.target_completion_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
           budget: p.budget || 0,
-          progress: p.progress_percentage || 0,
+          progress: Number(p.physical_progress_pct) || 0,
           plannedProgress: 0,
           status: p.status || 'draft',
           roadStatus: 'Open',
@@ -240,14 +259,45 @@ export function AppProvider({ children }: AppProviderProps) {
   async function fetchInspections() {
     try {
       const res = await api.get('/inspections');
-      if (res.data.success) setInspections(res.data.data);
+      if (res.data.success) {
+         setInspections(res.data.data.map((item: any) => ({
+            ...item,
+            result: item.result === 'pending' ? 'Pending' : item.result === 'passed' ? 'Passed' : item.result === 'failed' ? 'Failed' : 'Reinspection Required',
+         })));
+      }
     } catch (e) { console.error(e); }
   }
 
   async function fetchContractors() {
+    // Backend API for /contractors is not implemented in this prototype
+    // Use realistic mock data for reports and dropdowns
+    setContractors([
+      { id: 'c1', name: 'Delta Infrastructure Ltd.', risk: 'Low', performance: 92, safety: 98, activeProjects: 2, completedProjects: 15, delayedProjects: 0, failedInspections: 0 },
+      { id: 'c2', name: 'Spectra Engineers Ltd.', risk: 'Medium', performance: 75, safety: 85, activeProjects: 3, completedProjects: 8, delayedProjects: 1, failedInspections: 1 },
+      { id: 'c3', name: 'Toma Construction & Co.', risk: 'Low', performance: 88, safety: 90, activeProjects: 1, completedProjects: 22, delayedProjects: 0, failedInspections: 0 },
+      { id: 'c4', name: 'Abdul Monem Limited', risk: 'High', performance: 60, safety: 70, activeProjects: 4, completedProjects: 5, delayedProjects: 2, failedInspections: 3 },
+      { id: 'c5', name: 'Max Infrastructure Ltd.', risk: 'Low', performance: 95, safety: 95, activeProjects: 1, completedProjects: 10, delayedProjects: 0, failedInspections: 0 },
+    ]);
+  }
+
+  async function fetchComplaints() {
     try {
-      const res = await api.get('/contractors');
-      if (res.data.success) setContractors(res.data.data);
+      const res = await api.get('/complaints');
+      if (res.data.success) {
+        setComplaints(res.data.data.map((c: any) => ({
+          id: c.complaint_ticket_no,
+          project: `Project ${c.project_id || 'Unknown'}`,
+          category: c.category,
+          location: c.location_address,
+          description: c.description,
+          status: c.status === 'under_review' ? 'Under Review' : c.status === 'in_progress' ? 'In Progress' : (c.status?.charAt(0).toUpperCase() + c.status?.slice(1)) || 'Submitted',
+          citizen: c.citizen_name || 'Citizen',
+          department: 'Public Works',
+          assignedTo: c.assigned_contractor_id ? 'Contractor' : 'Unassigned',
+          priority: 'Medium',
+          submittedDate: new Date(c.created_at).toLocaleDateString()
+        })));
+      }
     } catch (e) { console.error(e); }
   }
 
@@ -369,6 +419,13 @@ export function AppProvider({ children }: AppProviderProps) {
     showToast(`${department.name} added to the official directory.`);
   }
 
+  function updateDepartment(department: Department) {
+    setDepartments((currentDepartments) =>
+      currentDepartments.map((d) => (d.id === department.id ? department : d))
+    );
+    showToast(`${department.name} details updated.`);
+  }
+
   async function updateUserStatus(userId: string, status: AccountStatus) {
     try {
       await api.put(`/admin/users/${userId}/status`, { status });
@@ -412,6 +469,18 @@ export function AppProvider({ children }: AppProviderProps) {
     showToast(`Complaint status changed to ${status}.`, 'info');
   }
 
+  function addNotification(title: string, message: string, role?: Role) {
+    const notification: NotificationItem = {
+      id: `NOTIF-${Date.now()}`,
+      title,
+      message,
+      time: 'Just now',
+      read: false,
+      role
+    };
+    setNotifications((prev) => [notification, ...prev]);
+  }
+
   const contextValue: AppContextValue = {
     currentUser,
     users,
@@ -430,12 +499,14 @@ export function AppProvider({ children }: AppProviderProps) {
     register,
     addProject,
     addDepartment,
+    updateDepartment,
     updateUserStatus,
     addComplaint,
     updateRegistrationStatus,
     updateProjectProgress,
     updateComplaintStatus,
     showToast,
+    addNotification,
   };
 
   return (

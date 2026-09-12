@@ -116,7 +116,7 @@ function ReportsPage() {
             <div className="quality-legend">
               <span><i className="quality-good" /> Passed inspections <strong>{inspections.filter((item) => item.result.includes('Passed')).length}</strong></span>
               <span><i className="quality-bad" /> Failed inspections <strong>{inspections.filter((item) => item.result === 'Failed').length}</strong></span>
-              <span><i className="quality-warning" /> Scheduled inspections <strong>{inspections.filter((item) => item.result === 'Scheduled').length}</strong></span>
+              <span><i className="quality-warning" /> Scheduled inspections <strong>{inspections.filter((item) => item.result === 'Pending').length}</strong></span>
             </div>
           </div>
         </article>

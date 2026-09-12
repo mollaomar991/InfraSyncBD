@@ -69,3 +69,25 @@ export const resolveComplaint = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+export const updateComplaintStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        let dbStatus = 'submitted';
+        if (status === 'Assigned') dbStatus = 'under_review';
+        else if (status === 'In Progress') dbStatus = 'in_progress';
+        else if (status === 'Resolved') dbStatus = 'resolved';
+        else if (status === 'Closed') dbStatus = 'closed';
+
+        await pool.query(
+            `UPDATE complaints SET status = ? WHERE complaint_ticket_no = ?`,
+            [dbStatus, id]
+        );
+
+        res.json({ success: true, message: 'Status updated' });
+    } catch (error) {
+        console.error('Error updating status:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};

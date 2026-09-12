@@ -7,3 +7,8 @@ dist
 .env
 server/node_modules
 server/uploads/
+
+# Documentation files
+Phase5_Contractor_Progress_Delay.md
+Phase6_Complaint_Notification.md
+Phase7_Inspections_Reports.md
