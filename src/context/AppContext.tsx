@@ -44,6 +44,7 @@ interface AppContextValue {
   users: User[];
   departments: Department[];
   projects: Project[];
+  refreshProjects: () => Promise<void>;
   complaints: Complaint[];
   registrations: Registration[];
   notifications: NotificationItem[];
@@ -63,7 +64,9 @@ interface AppContextValue {
     registrationId: string,
     status: AccountStatus,
   ) => Promise<void>;
+  updateProject: (id: string, input: Partial<ProjectInput>) => Promise<void>;
   updateProjectProgress: (projectId: string, payload: any) => Promise<void>;
+  respondToCoordination: (id: string, status: string, notes?: string) => Promise<void>;
   updateComplaintStatus: (
     complaintId: string,
     status: Complaint['status'],
@@ -185,7 +188,7 @@ export function AppProvider({ children }: AppProviderProps) {
           name: p.project_name,
           type: p.project_type || 'Road Construction',
           department: p.department_name || 'Unknown',
-          contractor: 'Not assigned',
+          contractor: p.contractor_name || 'Not assigned',
           area: p.area_name || 'N/A',
           road: p.road_name || 'N/A',
           latitude: p.latitude || 23.8103,
@@ -199,7 +202,7 @@ export function AppProvider({ children }: AppProviderProps) {
           plannedProgress: 0,
           status: p.status || 'draft',
           roadStatus: 'Open',
-          conflictLevel: 'None',
+          conflictLevel: (p.status === 'conflict_detected' || p.status === 'under_approval' || p.status === 'under_coordination') ? 'High' : 'None',
           approvalStatus: p.status || 'draft',
           description: p.description || '',
         }));
@@ -308,12 +311,28 @@ export function AppProvider({ children }: AppProviderProps) {
       const res = await api.post('/projects', input);
       if (res.data.success) {
         fetchProjects();
-        showToast('Project created successfully!', 'success');
+        showToast(res.data.message || 'Project created successfully!', res.data.data?.conflictsFound ? 'warning' : 'success');
         return res.data.data;
       }
       throw new Error('Failed to create project');
     } catch (error: any) {
       showToast(error.response?.data?.message || 'Failed to create project', 'error');
+      throw error;
+    }
+  }
+
+  async function updateProject(id: string, input: Partial<ProjectInput>): Promise<void> {
+    try {
+      const numericId = id.replace('PRJ-', '');
+      const res = await api.put(`/projects/${numericId}`, input);
+      if (res.data.success) {
+        fetchProjects();
+        showToast(res.data.message || 'Project updated successfully!', res.data.data?.conflictsFound ? 'warning' : 'success');
+      } else {
+        throw new Error('Failed to update project');
+      }
+    } catch (error: any) {
+      showToast(error.response?.data?.message || 'Failed to update project', 'error');
       throw error;
     }
   }
@@ -360,6 +379,17 @@ export function AppProvider({ children }: AppProviderProps) {
   }
 
   // ── Remaining functions (unchanged, still localStorage) ────────
+  async function respondToCoordination(id: string, status: string, notes: string = '') {
+    try {
+      const res = await api.put(`/coordination/${id}/respond`, { status, notes });
+      if (res.data.success) {
+        showToast(`Coordination ${status.replace('_', ' ')} successfully.`);
+      }
+    } catch (error: any) {
+      showToast(error.response?.data?.message || 'Failed to update coordination', 'error');
+      throw error;
+    }
+  }
 
   function addDepartment(department: Department) {
     setDepartments((currentDepartments) => [
@@ -436,6 +466,8 @@ export function AppProvider({ children }: AppProviderProps) {
     updateProjectProgress,
     updateComplaintStatus,
     showToast,
+    respondToCoordination,
+    refreshProjects: fetchProjects,
   };
 
   return (

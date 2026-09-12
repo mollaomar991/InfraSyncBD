@@ -12,7 +12,12 @@ function ProjectsPage() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const { currentUser, projects } = useApp();
+  const [selectedEditProject, setSelectedEditProject] = useState<Project | null>(null);
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editEndDate, setEditEndDate] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  const { currentUser, projects, updateProject } = useApp();
 
   if (!currentUser) return null;
 
@@ -174,6 +179,20 @@ function ProjectsPage() {
               <Link className="button button-ghost" to={`/map?project=${project.id}`}>
                 View on map
               </Link>
+              {project.status === 'rework_required' && (
+                <button
+                  className="button button-primary"
+                  type="button"
+                  style={{ marginLeft: 'auto', backgroundColor: '#e63946', color: '#fff' }}
+                  onClick={() => {
+                    setSelectedEditProject(project);
+                    setEditStartDate(project.startDate);
+                    setEditEndDate(project.endDate);
+                  }}
+                >
+                  Edit / Resubmit
+                </button>
+              )}
             </div>
           </article>
         ))}
@@ -237,6 +256,90 @@ function ProjectsPage() {
               </div>
             </div>
             <ProgressBar value={selectedProject.progress} />
+          </article>
+        </div>
+      )}
+
+      {selectedEditProject && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={() => setSelectedEditProject(null)}
+        >
+          <article
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit project dates"
+            onMouseDown={(event: MouseEvent<HTMLElement>) => event.stopPropagation()}
+          >
+            <div className="modal-hazard" style={{ background: 'repeating-linear-gradient(45deg, #e63946, #e63946 10px, transparent 10px, transparent 20px)' }} />
+            <button
+              className="modal-close"
+              type="button"
+              onClick={() => setSelectedEditProject(null)}
+            >
+              ×
+            </button>
+            <span className="page-eyebrow">Rework Required</span>
+            <h2>Edit {selectedEditProject.id}</h2>
+            <p className="modal-description">Update your project schedule to resolve conflicts and resubmit for approval.</p>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setIsUpdating(true);
+              try {
+                await updateProject(selectedEditProject.id, {
+                  startDate: editStartDate,
+                  endDate: editEndDate,
+                });
+                setSelectedEditProject(null);
+              } catch (error) {
+                // Handled in context
+              } finally {
+                setIsUpdating(false);
+              }
+            }}>
+              <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+                <label className="input-group">
+                  <span>New Start Date</span>
+                  <input
+                    type="date"
+                    required
+                    value={editStartDate}
+                    onChange={(e) => setEditStartDate(e.target.value)}
+                  />
+                </label>
+                
+                <label className="input-group">
+                  <span>New Target Completion Date</span>
+                  <input
+                    type="date"
+                    required
+                    value={editEndDate}
+                    onChange={(e) => setEditEndDate(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button
+                  type="button"
+                  className="button button-ghost"
+                  onClick={() => setSelectedEditProject(null)}
+                  disabled={isUpdating}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? 'Saving...' : 'Save & Resubmit'}
+                </button>
+              </div>
+            </form>
           </article>
         </div>
       )}

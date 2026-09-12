@@ -8,7 +8,7 @@ import type { Approval } from '../types';
 
 function ApprovalsPage() {
   const [approvalItems, setApprovalItems] = useState<Approval[]>([]);
-  const { currentUser, showToast } = useApp();
+  const { currentUser, showToast, refreshProjects } = useApp();
 
   // Fetch approvals from real API
   useEffect(() => {
@@ -68,6 +68,7 @@ function ApprovalsPage() {
         items.map((item) => (item.id === approvalId ? { ...item, status } : item)),
       );
       showToast(`Approval decision saved as ${status}.`, 'info');
+      await refreshProjects();
     } catch (error) {
       console.error('Error voting on approval:', error);
       showToast('Failed to save decision.', 'error');
@@ -161,7 +162,7 @@ function ApprovalsPage() {
                       >
                         Send reminder
                       </button>
-                    ) : (
+                    ) : approval.status === 'Pending' ? (
                       <div className="table-action-group">
                         <button
                           type="button"
@@ -178,6 +179,10 @@ function ApprovalsPage() {
                           Request change
                         </button>
                       </div>
+                    ) : (
+                      <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                        Decision recorded
+                      </span>
                     )}
                   </td>
                 </tr>

@@ -11,7 +11,7 @@ function ContractorsPage() {
   const [selectedContractorId, setSelectedContractorId] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [assigning, setAssigning] = useState(false);
-  const { currentUser, projects, showToast } = useApp();
+  const { currentUser, projects, showToast, refreshProjects } = useApp();
   
   const isAdmin = currentUser?.role === 'super_admin';
   const isOfficer = currentUser?.role === 'department_officer';
@@ -65,6 +65,7 @@ function ContractorsPage() {
       const projectName = projects.find(p => p.id === selectedProjectId)?.name || 'Project';
       
       showToast(`${contractorName} assigned to ${projectName}.`, 'success');
+      await refreshProjects();
       
       setSelectedContractorId('');
       setSelectedProjectId('');
@@ -101,7 +102,7 @@ function ContractorsPage() {
             <span>Approved project</span>
             <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
               <option value="">Select project</option>
-              {projects.filter((project) => project.approvalStatus === 'Final Approved').map((project) => (
+              {projects.filter((project) => project.approvalStatus === 'final_approved').map((project) => (
                 <option key={project.id} value={project.id}>{project.name}</option>
               ))}
             </select>

@@ -160,17 +160,19 @@ export const createProject = async (req, res) => {
 export const getProjects = async (req, res) => {
     try {
         const [projects] = await pool.query(`
-            SELECT p.*, 
-                   pl.road_name, pl.area_name, pl.latitude, pl.longitude, pl.geometry_type, pl.coordinates_json,
-                   d.department_name, 
-                   u.full_name as officer_name
-            FROM projects p
-            LEFT JOIN project_locations pl ON p.project_id = pl.project_id
-            LEFT JOIN departments d ON p.department_id = d.department_id
-            LEFT JOIN officer_profiles op ON p.created_by_officer_id = op.officer_id
-            LEFT JOIN users u ON op.user_id = u.user_id
-            WHERE p.is_archived = FALSE
-            ORDER BY p.created_at DESC
+              SELECT p.*, 
+                     pl.road_name, pl.area_name, pl.latitude, pl.longitude, pl.geometry_type, pl.coordinates_json,
+                     d.department_name, 
+                     u.full_name as officer_name,
+                     c.company_name as contractor_name
+              FROM projects p
+              LEFT JOIN project_locations pl ON p.project_id = pl.project_id
+              LEFT JOIN departments d ON p.department_id = d.department_id
+              LEFT JOIN officer_profiles op ON p.created_by_officer_id = op.officer_id
+              LEFT JOIN users u ON op.user_id = u.user_id
+              LEFT JOIN contractor_profiles c ON p.assigned_contractor_id = c.contractor_id
+              WHERE p.is_archived = FALSE
+              ORDER BY p.created_at DESC
         `);
 
         res.json({ success: true, data: projects });
@@ -209,7 +211,24 @@ export const getProjectById = async (req, res) => {
 
 // --- 4. Update a project (PUT /api/projects/:id) ---
 export const updateProject = async (req, res) => {
-    const { project_name, project_type, description, budget, start_date, target_completion_date, priority, status } = req.body;
+    const { 
+        name: project_name,
+        type: project_type,
+        description,
+        budget,
+        startDate: start_date,
+        endDate: target_completion_date,
+        priority
+    } = req.body;
+
+    const formatForMySQL = (dateString) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0];
+    };
+
+    const mysqlStartDate = formatForMySQL(start_date);
+    const mysqlEndDate = formatForMySQL(target_completion_date);
 
     try {
         // Check if this project belongs to the officer
@@ -231,6 +250,8 @@ export const updateProject = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Project not found or you are not the owner' });
         }
 
+        const projectId = req.params.id;
+
         // Update project details
         await pool.query(
             `UPDATE projects SET 
@@ -240,13 +261,86 @@ export const updateProject = async (req, res) => {
                 budget = COALESCE(?, budget),
                 start_date = COALESCE(?, start_date),
                 target_completion_date = COALESCE(?, target_completion_date),
-                priority = COALESCE(?, priority),
-                status = COALESCE(?, status)
+                priority = COALESCE(?, priority)
             WHERE project_id = ?`,
-            [project_name, project_type, description, budget, start_date, target_completion_date, priority, status, req.params.id]
+            [project_name, project_type, description, budget, mysqlStartDate, mysqlEndDate, priority, projectId]
         );
 
-        res.json({ success: true, message: 'Project updated successfully' });
+        // Run Conflict Detection if dates were provided
+        let conflictsFound = false;
+        
+        if (mysqlStartDate && mysqlEndDate) {
+            // Get the road name for this project
+            const [location] = await pool.query(
+                'SELECT road_name FROM project_locations WHERE project_id = ?',
+                [projectId]
+            );
+            
+            const road_name = location.length > 0 ? location[0].road_name : null;
+
+            if (road_name && road_name !== 'N/A') {
+                const [overlapping] = await pool.query(
+                    `SELECT p.project_id, p.project_name, p.department_id,
+                            p.start_date, p.target_completion_date
+                     FROM projects p
+                     JOIN project_locations pl ON p.project_id = pl.project_id
+                     WHERE pl.road_name = ?
+                       AND p.project_id != ?
+                       AND p.status NOT IN ('completed', 'cancelled', 'archived', 'draft')
+                       AND p.start_date <= ?
+                       AND p.target_completion_date >= ?`,
+                    [road_name, projectId, mysqlEndDate, mysqlStartDate]
+                );
+
+                // Insert conflicts
+                for (const existingProj of overlapping) {
+                    conflictsFound = true;
+                    // Ensure conflict doesn't already exist to avoid duplicates
+                    const [existingConflict] = await pool.query(
+                        `SELECT * FROM conflict_alerts WHERE project_id = ? AND conflicting_project_id = ?`,
+                        [projectId, existingProj.project_id]
+                    );
+
+                    if (existingConflict.length === 0) {
+                        await pool.query(
+                            `INSERT INTO conflict_alerts
+                             (project_id, conflicting_project_id, conflict_level, conflict_reason, recommended_sequence, resolution_status)
+                             VALUES (?, ?, 'high', ?, ?, 'detected')`,
+                            [
+                                projectId,
+                                existingProj.project_id,
+                                `Both projects involve work on "${road_name}" with overlapping schedules (${mysqlStartDate} – ${mysqlEndDate}).`,
+                                `Coordinate with the other department to stagger work periods and avoid simultaneous road excavation.`
+                            ]
+                        );
+                    } else {
+                        await pool.query(
+                            `UPDATE conflict_alerts SET resolution_status = 'detected' WHERE conflict_id = ?`,
+                            [existingConflict[0].conflict_id]
+                        );
+                    }
+                }
+            }
+        }
+
+        // Update status based on conflicts
+        if (conflictsFound) {
+            await pool.query(
+                `UPDATE projects SET status = 'conflict_detected' WHERE project_id = ?`,
+                [projectId]
+            );
+        } else {
+            await pool.query(
+                `UPDATE projects SET status = 'final_approved' WHERE project_id = ?`,
+                [projectId]
+            );
+        }
+
+        res.json({ 
+            success: true, 
+            message: conflictsFound ? 'Project updated. Conflicts detected — please send coordination request.' : 'Project updated and approved!',
+            data: { conflictsFound }
+        });
     } catch (error) {
         console.error('Error updating project:', error);
         res.status(500).json({ success: false, message: 'Server error updating project' });

@@ -9,7 +9,11 @@ import type { Conflict } from '../types';
 function ConflictsPage() {
   const [conflictItems, setConflictItems] = useState<Conflict[]>([]);
   const [levelFilter, setLevelFilter] = useState('All');
-  const { currentUser, showToast } = useApp();
+  const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
+  const [suggestedStartDate, setSuggestedStartDate] = useState('');
+  const [suggestedEndDate, setSuggestedEndDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const { currentUser, showToast, refreshProjects } = useApp();
 
   // Fetch conflicts from real API
   useEffect(() => {
@@ -50,22 +54,45 @@ function ConflictsPage() {
     try {
       if (status === 'Resolved') {
         await api.put(`/conflicts/${conflictId}/resolve`);
-      } else if (status === 'Coordination Request Sent') {
-        // Step 4 (Phase 4): Send coordination request → creates approval_requests
-        await api.post(`/conflicts/${conflictId}/coordinate`);
       }
       setConflictItems((items) =>
         items.map((item) => (item.id === conflictId ? { ...item, status } : item)),
       );
-      showToast(
-        status === 'Coordination Request Sent'
-          ? 'Coordination request sent. Awaiting department approval.'
-          : `Conflict changed to ${status}.`,
-        'info',
-      );
+      showToast(`Conflict changed to ${status}.`, 'info');
     } catch (error) {
       console.error('Error updating conflict:', error);
       showToast('Failed to update conflict.', 'error');
+    }
+  }
+
+  async function submitCoordination() {
+    if (!selectedConflictId || !suggestedStartDate || !suggestedEndDate) {
+      showToast('Please provide both start and end dates.', 'error');
+      return;
+    }
+    
+    try {
+      await api.post(`/conflicts/${selectedConflictId}/coordinate`, {
+        suggestedStartDate,
+        suggestedEndDate,
+        notes,
+      });
+      
+      setConflictItems((items) =>
+        items.map((item) => (item.id === selectedConflictId ? { ...item, status: 'Coordination Request Sent' } : item)),
+      );
+      
+      showToast('Coordination request sent. Awaiting department approval.', 'info');
+      await refreshProjects();
+      
+      // Reset and close modal
+      setSelectedConflictId(null);
+      setSuggestedStartDate('');
+      setSuggestedEndDate('');
+      setNotes('');
+    } catch (error) {
+      console.error('Error sending coordination request:', error);
+      showToast('Failed to send coordination request.', 'error');
     }
   }
 
@@ -163,27 +190,97 @@ function ConflictsPage() {
 
             {!isAdmin && (
               <div className="card-actions">
-                <button
-                  className="button button-primary"
-                  type="button"
-                  onClick={() =>
-                    updateConflict(conflict.id, 'Coordination Request Sent')
-                  }
-                >
-                  Send coordination request
-                </button>
-                <button
-                  className="button button-secondary"
-                  type="button"
-                  onClick={() => updateConflict(conflict.id, 'Resolved')}
-                >
-                  Mark resolved
-                </button>
+                {conflict.status === 'Active' || conflict.status === 'Detected' ? (
+                  <>
+                      <button
+                        className="button button-primary"
+                        type="button"
+                        onClick={() => setSelectedConflictId(conflict.id)}
+                      >
+                      Send coordination request
+                    </button>
+                    <button
+                      className="button button-secondary"
+                      type="button"
+                      onClick={() => updateConflict(conflict.id, 'Resolved')}
+                    >
+                      Mark resolved
+                    </button>
+                  </>
+                ) : (
+                  <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                    {conflict.status === 'Under coordination' || conflict.status === 'Coordination Request Sent' 
+                      ? 'Coordination request sent' 
+                      : 'Conflict resolved'}
+                  </span>
+                )}
               </div>
             )}
           </article>
         ))}
       </div>
+
+      {selectedConflictId && (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <h2>Send Coordination Request</h2>
+            <p style={{ marginBottom: '1.5rem', color: '#666' }}>
+              Propose a new schedule for this work so the other department can review it.
+            </p>
+            
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitCoordination();
+              }}
+              className="form-grid"
+            >
+              <label className="form-field">
+                <span>Proposed Start Date</span>
+                <input
+                  type="date"
+                  value={suggestedStartDate}
+                  onChange={(e) => setSuggestedStartDate(e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="form-field">
+                <span>Response Due Date</span>
+                <input
+                  type="date"
+                  value={suggestedEndDate}
+                  onChange={(e) => setSuggestedEndDate(e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="form-field" style={{ gridColumn: '1 / -1' }}>
+                <span>Additional Notes/Comments (Optional)</span>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Example: We plan to work at night to minimize disruption. Please confirm."
+                  rows={3}
+                />
+              </label>
+
+              <div className="form-actions" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="button button-ghost"
+                  onClick={() => setSelectedConflictId(null)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="button button-primary">
+                  Send Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
