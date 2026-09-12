@@ -57,7 +57,14 @@ export const requestApproval = async (req, res) => {
 export const voteOnApproval = async (req, res) => {
     try {
         const { id } = req.params;
-        const { decision, comments } = req.body;
+        let { decision, comments } = req.body;
+
+        // Map frontend strings to DB enums
+        if (decision === 'Change Requested' || decision === 'change_requested') {
+            decision = 'modification_requested';
+        } else if (decision === 'Approved') {
+            decision = 'approved';
+        }
 
         // Find the officer_id of the logged-in user
         const [officer] = await pool.query(
@@ -75,14 +82,13 @@ export const voteOnApproval = async (req, res) => {
             [decision, comments, officer[0].officer_id, id]
         );
 
-        // Now check: did ALL departments approve this project?
-        // First, find which project this approval belongs to
-        const [thisApproval] = await pool.query(
+        // Check if all required approvals are met
+        const [project] = await pool.query(
             'SELECT project_id FROM approval_requests WHERE approval_id = ?',
             [id]
         );
-
-        const projectId = thisApproval[0].project_id;
+        
+        const projectId = project[0].project_id;
 
         // Count total approvals and pending ones for this project
         const [counts] = await pool.query(
@@ -94,9 +100,15 @@ export const voteOnApproval = async (req, res) => {
         );
 
         // If all departments approved, update project status to 'final_approved'
-        if (counts[0].total > 0 && counts[0].approved_count === counts[0].total) {
+        if (Number(counts[0].total) > 0 && Number(counts[0].approved_count) === Number(counts[0].total)) {
             await pool.query(
                 `UPDATE projects SET status = 'final_approved' WHERE project_id = ?`,
+                [projectId]
+            );
+        } else if (decision === 'modification_requested') {
+            // If anyone requests a change, the project needs rework
+            await pool.query(
+                `UPDATE projects SET status = 'rework_required' WHERE project_id = ?`,
                 [projectId]
             );
         }

@@ -68,6 +68,54 @@ export const respondToCoordination = async (req, res) => {
             [status, notes, id]
         );
 
+        // Fetch the project_id associated with this request
+        const [coordRequest] = await pool.query(
+            `SELECT project_id FROM coordination_requests WHERE coordination_id = ?`,
+            [id]
+        );
+        const projectId = coordRequest[0].project_id;
+
+        if (status === 'changes_requested' || status === 'rejected') {
+            // Update project status to rework_required
+            await pool.query(
+                `UPDATE projects SET status = 'rework_required' WHERE project_id = ?`,
+                [projectId]
+            );
+        } else if (status === 'accepted') {
+            // Check if ALL coordination requests for this project are now accepted
+            const [counts] = await pool.query(
+                `SELECT 
+                    COUNT(*) as total_requests,
+                    SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) as accepted_requests
+                 FROM coordination_requests WHERE project_id = ?`,
+                [projectId]
+            );
+
+            if (Number(counts[0].total_requests) > 0 && Number(counts[0].accepted_requests) === Number(counts[0].total_requests)) {
+                // All coordination requests are accepted!
+                // Move project to 'under_approval'
+                await pool.query(
+                    `UPDATE projects SET status = 'under_approval' WHERE project_id = ?`,
+                    [projectId]
+                );
+
+                // Auto-create approval requests for all required departments (the receivers of coordination requests)
+                const [departments] = await pool.query(
+                    `SELECT DISTINCT receiver_department_id FROM coordination_requests WHERE project_id = ?`,
+                    [projectId]
+                );
+
+                for (const dept of departments) {
+                    // Avoid inserting duplicates
+                    await pool.query(
+                        `INSERT IGNORE INTO approval_requests (project_id, approving_department_id, decision)
+                         VALUES (?, ?, 'pending')`,
+                        [projectId, dept.receiver_department_id]
+                    );
+                }
+            }
+        }
+
         res.json({ success: true, message: `Coordination request ${status}` });
     } catch (error) {
         console.error('Error responding to coordination:', error);

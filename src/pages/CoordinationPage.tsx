@@ -19,7 +19,7 @@ interface CoordinationRequest {
 function CoordinationPage() {
   const [requests, setRequests] = useState<CoordinationRequest[]>([]);
   const [comment, setComment] = useState('');
-  const { showToast } = useApp();
+  const { showToast, refreshProjects } = useApp();
 
   // Fetch coordination requests from real API
   useEffect(() => {
@@ -74,6 +74,7 @@ function CoordinationPage() {
       );
       setComment('');
       showToast(`Coordination response saved as ${status}.`, 'info');
+      await refreshProjects();
     } catch (error) {
       console.error('Error responding to coordination:', error);
       showToast('Failed to respond.', 'error');
@@ -134,27 +135,35 @@ function CoordinationPage() {
                 </div>
 
                 <div className="card-actions">
-                  <button
-                    className="button button-primary"
-                    type="button"
-                    onClick={() => respond(request.id, 'Accepted')}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    className="button button-secondary"
-                    type="button"
-                    onClick={() => respond(request.id, 'Change Requested')}
-                  >
-                    Request changes
-                  </button>
-                  <button
-                    className="button button-ghost"
-                    type="button"
-                    onClick={() => respond(request.id, 'Rejected')}
-                  >
-                    Reject
-                  </button>
+                  {request.status === 'Pending' ? (
+                    <>
+                      <button
+                        className="button button-primary"
+                        type="button"
+                        onClick={() => respond(request.id, 'Accepted')}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="button button-secondary"
+                        type="button"
+                        onClick={() => respond(request.id, 'Change Requested')}
+                      >
+                        Request changes
+                      </button>
+                      <button
+                        className="button button-ghost"
+                        type="button"
+                        onClick={() => respond(request.id, 'Rejected')}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                      Decision: {request.status}
+                    </span>
+                  )}
                 </div>
               </article>
             ))}

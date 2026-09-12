@@ -51,11 +51,13 @@ export const resolveConflict = async (req, res) => {
 export const sendCoordinationRequest = async (req, res) => {
     try {
         const { id } = req.params;
+        const { suggestedStartDate, suggestedEndDate, notes } = req.body;
 
-        // Find the conflict details
+        // Find the conflict details and project department
         const [conflict] = await pool.query(
-            `SELECT ca.project_id, ca.conflicting_project_id, p2.department_id AS conflicting_dept_id
+            `SELECT ca.project_id, ca.conflicting_project_id, p1.department_id AS sender_dept_id, p2.department_id AS conflicting_dept_id
              FROM conflict_alerts ca
+             JOIN projects p1 ON ca.project_id = p1.project_id
              JOIN projects p2 ON ca.conflicting_project_id = p2.project_id
              WHERE ca.conflict_id = ?`,
             [id]
@@ -65,13 +67,23 @@ export const sendCoordinationRequest = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Conflict not found' });
         }
 
-        const { project_id, conflicting_dept_id } = conflict[0];
+        const { project_id, sender_dept_id, conflicting_dept_id } = conflict[0];
 
-        // Insert approval request for the conflicting department
+        // Format dates for MySQL (YYYY-MM-DD)
+        const formatForMySQL = (dateString) => {
+            if (!dateString) return null;
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0];
+        };
+
+        const mysqlStartDate = formatForMySQL(suggestedStartDate);
+        const mysqlEndDate = formatForMySQL(suggestedEndDate);
+
+        // Insert coordination request for the conflicting department
         await pool.query(
-            `INSERT INTO approval_requests (project_id, approving_department_id, decision)
-             VALUES (?, ?, 'pending')`,
-            [project_id, conflicting_dept_id]
+            `INSERT INTO coordination_requests (project_id, sender_department_id, receiver_department_id, suggested_start_date, suggested_end_date, notes, status)
+             VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+            [project_id, sender_dept_id, conflicting_dept_id, mysqlStartDate, mysqlEndDate, notes || '']
         );
 
         // Update conflict status to 'under_coordination'
@@ -80,13 +92,13 @@ export const sendCoordinationRequest = async (req, res) => {
             [id]
         );
 
-        // Update project status to 'under_approval'
+        // Update project status to 'under_coordination'
         await pool.query(
-            `UPDATE projects SET status = 'under_approval' WHERE project_id = ?`,
+            `UPDATE projects SET status = 'under_coordination' WHERE project_id = ?`,
             [project_id]
         );
 
-        res.json({ success: true, message: 'Coordination request sent. Awaiting department approval.' });
+        res.json({ success: true, message: 'Coordination request sent successfully.' });
     } catch (error) {
         console.error('Error sending coordination request:', error);
         res.status(500).json({ success: false, message: 'Server error' });
