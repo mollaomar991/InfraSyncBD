@@ -78,12 +78,71 @@ export const createProject = async (req, res) => {
                 );
             }
 
+            // =============================================
+            // Step 3 (Phase 3): AUTO CONFLICT DETECTION
+            // Check if any existing project uses the SAME road
+            // AND has overlapping dates with this new project.
+            // =============================================
+            let conflictsFound = false;
+
+            if (road_name) {
+                const [overlapping] = await connection.query(
+                    `SELECT p.project_id, p.project_name, p.department_id,
+                            p.start_date, p.target_completion_date
+                     FROM projects p
+                     JOIN project_locations pl ON p.project_id = pl.project_id
+                     WHERE pl.road_name = ?
+                       AND p.project_id != ?
+                       AND p.status NOT IN ('completed', 'cancelled', 'archived')
+                       AND p.start_date <= ?
+                       AND p.target_completion_date >= ?`,
+                    [road_name, projectId, mysqlEndDate, mysqlStartDate]
+                );
+
+                // For every overlapping project, insert a conflict_alert row
+                for (const existing of overlapping) {
+                    conflictsFound = true;
+
+                    await connection.query(
+                        `INSERT INTO conflict_alerts
+                         (project_id, conflicting_project_id, conflict_level, conflict_reason, recommended_sequence, resolution_status)
+                         VALUES (?, ?, 'high', ?, ?, 'detected')`,
+                        [
+                            projectId,
+                            existing.project_id,
+                            `Both projects involve work on "${road_name}" with overlapping schedules (${mysqlStartDate} – ${mysqlEndDate}).`,
+                            `Coordinate with the other department to stagger work periods and avoid simultaneous road excavation.`
+                        ]
+                    );
+                }
+            }
+
+            // =============================================
+            // DECIDE PROJECT STATUS based on conflict result
+            // =============================================
+            if (conflictsFound) {
+                // Scenario B: Conflict detected → status = 'conflict_detected'
+                // Officer must manually send coordination request (Step 4)
+                await connection.query(
+                    `UPDATE projects SET status = 'conflict_detected' WHERE project_id = ?`,
+                    [projectId]
+                );
+            } else {
+                // Scenario A: No conflict → auto approve → status = 'final_approved'
+                await connection.query(
+                    `UPDATE projects SET status = 'final_approved' WHERE project_id = ?`,
+                    [projectId]
+                );
+            }
+
             await connection.commit();
 
             res.status(201).json({
                 success: true,
-                message: 'Project created successfully',
-                data: { project_id: projectId, project_code: projectCode }
+                message: conflictsFound
+                    ? 'Project created. Conflicts detected — please send coordination request from Conflicts page.'
+                    : 'No conflict detected. Project is approved!',
+                data: { project_id: projectId, project_code: projectCode, conflictsFound }
             });
         } catch (error) {
             await connection.rollback();

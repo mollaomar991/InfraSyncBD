@@ -50,11 +50,19 @@ function ConflictsPage() {
     try {
       if (status === 'Resolved') {
         await api.put(`/conflicts/${conflictId}/resolve`);
+      } else if (status === 'Coordination Request Sent') {
+        // Step 4 (Phase 4): Send coordination request → creates approval_requests
+        await api.post(`/conflicts/${conflictId}/coordinate`);
       }
       setConflictItems((items) =>
         items.map((item) => (item.id === conflictId ? { ...item, status } : item)),
       );
-      showToast(`Conflict changed to ${status}.`, 'info');
+      showToast(
+        status === 'Coordination Request Sent'
+          ? 'Coordination request sent. Awaiting department approval.'
+          : `Conflict changed to ${status}.`,
+        'info',
+      );
     } catch (error) {
       console.error('Error updating conflict:', error);
       showToast('Failed to update conflict.', 'error');
