@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import LoadingButton from '../components/LoadingButton';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
@@ -8,7 +8,13 @@ import { useApp } from '../context/AppContext';
 
 function ProgressPage() {
   const { currentUser, projects, updateProjectProgress, showToast } = useApp();
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[0]?.id || '');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProjectId) {
+      chooseProject(projects[0].id);
+    }
+  }, [projects, selectedProjectId]);
   const selectedProject = projects.find((project) => project.id === selectedProjectId);
   const [progress, setProgress] = useState(selectedProject?.progress || 0);
   const [financialProgress, setFinancialProgress] = useState(35);

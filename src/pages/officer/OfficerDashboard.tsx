@@ -62,7 +62,7 @@ function OfficerDashboard() {
         />
         <StatCard
           label="Upcoming inspections"
-          value={inspections.filter((item) => item.result === 'Scheduled').length}
+          value={inspections.filter((item) => item.result === 'Pending').length}
           detail="Milestone quality checks"
           icon="◎"
           tone="blue"

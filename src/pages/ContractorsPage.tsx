@@ -102,7 +102,11 @@ function ContractorsPage() {
             <span>Approved project</span>
             <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
               <option value="">Select project</option>
+<<<<<<< HEAD
               {projects.filter((project) => project.approvalStatus === 'final_approved').map((project) => (
+=======
+              {projects.filter((project) => project.approvalStatus === 'final_approved' || project.approvalStatus === 'Final Approved').map((project) => (
+>>>>>>> 461f620427e9d74162070cffa3e310761523ffb8
                 <option key={project.id} value={project.id}>{project.name}</option>
               ))}
             </select>

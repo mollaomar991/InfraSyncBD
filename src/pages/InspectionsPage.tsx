@@ -9,9 +9,22 @@ import type { Inspection } from '../types';
 function InspectionsPage() {
   const [inspectionItems, setInspectionItems] = useState<any[]>([]);
   const { currentUser, showToast, projects } = useApp();
-  const [scheduleProjectId, setScheduleProjectId] = useState(projects[0]?.id || '');
+  const [scheduleProjectId, setScheduleProjectId] = useState('');
   const [scheduleDate, setScheduleDate] = useState('');
-  const [checkedItems, setCheckedItems] = useState<Record<string, string[]>>({});
+  const [checkedItems, setCheckedItems] = useState<Record<string, string[]>>(() => {
+    const saved = localStorage.getItem('inspectionCheckedItems');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('inspectionCheckedItems', JSON.stringify(checkedItems));
+  }, [checkedItems]);
+
+  useEffect(() => {
+    if (projects.length > 0 && !scheduleProjectId) {
+      setScheduleProjectId(projects[0].id);
+    }
+  }, [projects, scheduleProjectId]);
 
   if (!currentUser) return null;
 
@@ -140,7 +153,13 @@ function InspectionsPage() {
                   'Traffic management',
                   'Site cleanliness',
                 ].map((check, index) => {
-                  const isChecked = (checkedItems[inspection.id] || []).includes(check);
+                  const hasUserCheckedData = !!checkedItems[inspection.id];
+                  const userChecked = (checkedItems[inspection.id] || []).includes(check);
+                  
+                  // Fallback for older passed/failed inspections without local data
+                  const staticChecked = inspection.result === 'Passed' || (inspection.result === 'Failed' && index < 3);
+                  
+                  const isChecked = hasUserCheckedData ? userChecked : staticChecked;
                   const isInteractive = isOfficer && inspection.result === 'Pending';
 
                   if (isInteractive) {
@@ -157,11 +176,9 @@ function InspectionsPage() {
                     );
                   }
 
-                  const staticChecked = inspection.result === 'Passed' || (inspection.result === 'Failed' && index < 3);
-
                   return (
-                    <span key={check} className={staticChecked ? 'passed' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {staticChecked ? '✓' : '○'} {check}
+                    <span key={check} className={isChecked ? 'passed' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {isChecked ? '✓' : '○'} {check}
                     </span>
                   );
                 })}
