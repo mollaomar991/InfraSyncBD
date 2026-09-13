@@ -272,15 +272,24 @@ export function AppProvider({ children }: AppProviderProps) {
   }
 
   async function fetchContractors() {
-    // Backend API for /contractors is not implemented in this prototype
-    // Use realistic mock data for reports and dropdowns
-    setContractors([
-      { id: 'c1', name: 'Delta Infrastructure Ltd.', risk: 'Low', performance: 92, safety: 98, activeProjects: 2, completedProjects: 15, delayedProjects: 0, failedInspections: 0 },
-      { id: 'c2', name: 'Spectra Engineers Ltd.', risk: 'Medium', performance: 75, safety: 85, activeProjects: 3, completedProjects: 8, delayedProjects: 1, failedInspections: 1 },
-      { id: 'c3', name: 'Toma Construction & Co.', risk: 'Low', performance: 88, safety: 90, activeProjects: 1, completedProjects: 22, delayedProjects: 0, failedInspections: 0 },
-      { id: 'c4', name: 'Abdul Monem Limited', risk: 'High', performance: 60, safety: 70, activeProjects: 4, completedProjects: 5, delayedProjects: 2, failedInspections: 3 },
-      { id: 'c5', name: 'Max Infrastructure Ltd.', risk: 'Low', performance: 95, safety: 95, activeProjects: 1, completedProjects: 10, delayedProjects: 0, failedInspections: 0 },
-    ]);
+    try {
+      const res = await api.get('/contractors/verified');
+      if (res.data.success) {
+        setContractors(res.data.data.map((c: any) => ({
+          id: c.contractor_id.toString(),
+          name: c.company_name || c.full_name || 'Unknown Contractor',
+          risk: c.risk_level || 'Low',
+          performance: c.performance_rating || 0,
+          safety: c.safety_score || 0,
+          activeProjects: c.active_projects || 0,
+          completedProjects: c.completed_projects || 0,
+          delayedProjects: c.delayed_projects || 0,
+          failedInspections: c.failed_inspections || 0,
+        })));
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async function fetchComplaints() {

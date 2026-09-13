@@ -260,15 +260,7 @@ function ComplaintsPage() {
                   {contractors.map(c => (
                     <option key={c.id} value={c.name}>{c.name}</option>
                   ))}
-                  {contractors.length === 0 && (
-                    <>
-                      <option value="Delta Infrastructure Ltd.">Delta Infrastructure Ltd.</option>
-                      <option value="Spectra Engineers Ltd.">Spectra Engineers Ltd.</option>
-                      <option value="Toma Construction & Co.">Toma Construction & Co.</option>
-                      <option value="Abdul Monem Limited">Abdul Monem Limited</option>
-                      <option value="Max Infrastructure Ltd.">Max Infrastructure Ltd.</option>
-                    </>
-                  )}
+
                 </select>
               </label>
             </div>
