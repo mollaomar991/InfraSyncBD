@@ -14,6 +14,7 @@ import DepartmentsPage from './pages/DepartmentsPage';
 import InspectionsPage from './pages/InspectionsPage';
 import LoginPage from './pages/LoginPage';
 import MapPage from './pages/MapPage';
+import MaterialEstimatorPage from './pages/MaterialEstimatorPage';
 import NotFoundPage from './pages/NotFoundPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProgressPage from './pages/ProgressPage';
@@ -117,6 +118,14 @@ function App() {
                 allowedRoles={['super_admin', 'department_officer']}
               >
                 <ContractorsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai/materials"
+            element={
+              <ProtectedRoute allowedRoles={['department_officer', 'contractor']}>
+                <MaterialEstimatorPage />
               </ProtectedRoute>
             }
           />
