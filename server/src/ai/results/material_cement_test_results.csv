@@ -1,0 +1,51 @@
+floor_area_type,no_floors,construction_period_end,building_type,structure_type_subtype,function_type,country,region,urban_rural,actual_kg_per_m2,predicted_kg_per_m2
+,,2010.0,SFH,RC_unspecified,R_SFH_unspecified,China,Beijing,rural,150.0,240.14362637470526
+,2.9,1946.0,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,2.534077114,0.0
+,,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,17.86886045,21.63963341688671
+,,2010.0,__MISSING__,RC_unspecified,NR_unspecified,China,avg,urban,418.0,255.018645073975
+,2.0,,__MISSING__,T_traditional,Unspecified,China,__MISSING__,Rural,8.4,19.929834030070637
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,5.489359888,0.0
+,1.0,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,37.73250582,20.047124208587917
+,1.0,,SFH,RC_unspecified,R_SFH_unspecified,Jordan,Irbid,Urban,103.4567901,139.39836162093778
+,3.3,1977.0,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,4.928676852,1.336671273636341
+,1.5,1990.0,SFH,M_brick,R_SFH_unspecified,"South European countries (Malta, Cyprus, Portugal, Greece, Spain, Italy, France)",__MISSING__,Urban,128.0,132.8168863157631
+,,,residential,M_brick,R_SFH_detached,Indonesia,Bandung,urban,139.1,155.03968323293984
+,4.0,1990.0,MFH,RC_unspecified,R_MFH_low,"South European countries (Malta, Cyprus, Portugal, Greece, Spain, Italy, France)",__MISSING__,Urban,95.0,125.09139668592226
+,1.5,1970.0,SFH,RC_unspecified,R_SFH_unspecified,"North European countries (Lithuania, Latvia, Estonia, Sweden, Finland)",__MISSING__,Urban,128.0,148.840853570378
+,1.0,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,21.43753791,20.047124208587917
+,,1970.0,MFH,RC_unspecified,R_MFH_unspecified,Austria,Vienna,urban,5.0,118.76718153581513
+,,,__MISSING__,T_traditional,R_SFH_unspecified,Japan,Hokkaido,urban,13.4,69.6296763142144
+,1.0,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,27.42491455,20.047124208587917
+,3.0,1997.0,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,10.52622694,14.725414889541469
+,1.0,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,38.22439732,47.18615703213031
+,,2010.0,SFH,T_traditional,R_SFH_detached,Brazil,Rio de Janeiro,urban,81.48,110.4245459969892
+,,1980.0,public,Unspecified,NR_civic,China,Beijing,urban,274.88,206.5371338488533
+,3.9,1918.0,__MISSING__,Unspecified,NR_unspecified,Austria,Vienna,urban,0.911937616,22.672538870124868
+,,2010.0,residential,RC_unspecified,R_unspecified,China,Shanghai,urban,220.0,185.7014521777998
+,30.0,2003.0,"""office, retail""",RC_unspecified,NR_office_high,Hong Kong/China,Hong Kong,urban ,0.062485536,51.9992371044291
+,,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,6.940969167,21.63963341688671
+,,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,10.14742703,21.63963341688671
+,1.0,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,45.03829415,47.18615703213031
+,2.8,1977.0,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,0.338159335,8.50525533356631
+,,2010.0,__MISSING__,Unspecified,R_unspecified,China,Beijing,urban,220.0,183.0378942338302
+,6.0,,MFH,S_concretefloor,R_MFH_high,China,Sichunan,urban,253.0774801,174.55160072334405
+,1.0,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,63.66998927,47.18615703213031
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,0.217010711,0.0
+,,1980.0,storage,Unspecified,NR_warehouse,China,Beijing,urban,1.88,139.01740019373457
+,4.0,2010.0,MFH,RC_concretefloor,R_MFH_low,Brazil,Rio de Janeiro,urban,63.82,88.09049035188289
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,3.519964226,0.0
+,4.6,1918.0,__MISSING__,Unspecified,NR_unspecified,Austria,Vienna,urban,0.577148789,12.32793056755068
+,,2000.0,educational,Unspecified,NR_civic,China,Beijing,urban,170.62,216.0011423050878
+,1.0,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,51.37698542,47.18615703213031
+,,2006.0,MFH,RC_unspecified,R_MFH_high,China,Beijing,urban,285.7,210.2762503413388
+,,1979.0,__MISSING__,M_brick,NR_unspecified,China,__MISSING__,urban,183.0,209.97677019100857
+,,1981.0,civic,Unspecified,NR_civic,Sweden,Gothenburg,urban,894.0,325.99317648531206
+,,1960.0,residential,RC_unspecified,R_unspecified,China,Shanghai,urban,155.0,205.59953649123517
+,,,SFH,M_brick,R_SFH_detached,Indonesia,Jakarta,urban,175.7,167.80761058678817
+,1.0,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,31.88570605,47.18615703213031
+,3.0,1999.0,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,4.127593187,14.910961444711575
+,,1980.0,industrial,Unspecified,NR_factory,China,Beijing,urban,218.43,271.5113297695569
+,5.0,,office,RC_unspecified,NR_office_low,Greece,Athens ,urban,11.47065045,32.74285690174868
+,,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,13.98928254,21.63963341688671
+,,1959.0,__MISSING__,M_brick,R_unspecified,China,__MISSING__,urban,148.0,158.6950787980449
+,,,industrial,Unspecified,NR_factory,Sweden,Gothenburg,urban,775.0,312.9083967215223

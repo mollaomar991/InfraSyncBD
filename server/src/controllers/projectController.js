@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { ensureAiSchema } from '../services/aiSchema.js';
 
 // =============================================
 // Task 1: Projects API - Module 2
@@ -18,7 +19,8 @@ export const createProject = async (req, res) => {
         road: road_name,
         area: area_name,
         coordinates,
-        priority
+        priority,
+        aiBudgetEstimate
     } = req.body;
 
     try {
@@ -48,6 +50,11 @@ export const createProject = async (req, res) => {
         const mysqlStartDate = formatForMySQL(start_date);
         const mysqlEndDate = formatForMySQL(target_completion_date);
 
+        // Ensure the AI estimate table exists before opening the project transaction.
+        if (aiBudgetEstimate) {
+            await ensureAiSchema();
+        }
+
         // Start transaction - save data in both tables simultaneously
         const connection = await pool.getConnection();
         try {
@@ -62,6 +69,25 @@ export const createProject = async (req, res) => {
             );
 
             const projectId = projectResult.insertId;
+
+            // Save the AI budget estimate that the officer reviewed before creating the project.
+            if (aiBudgetEstimate?.prediction) {
+                const prediction = aiBudgetEstimate.prediction;
+                await connection.query(
+                    `INSERT INTO project_ai_estimates
+                      (project_id, estimate_type, predicted_budget_usd, predicted_budget_bdt, exchange_rate, input_json, output_json, created_by_user_id)
+                     VALUES (?, 'budget', ?, ?, ?, ?, ?, ?)`,
+                    [
+                        projectId,
+                        Number(prediction.estimated_budget_usd) || null,
+                        Number(prediction.estimated_budget_bdt) || null,
+                        Number(prediction.exchange_rate_usd_to_bdt) || null,
+                        JSON.stringify(aiBudgetEstimate.input || {}),
+                        JSON.stringify(prediction),
+                        req.user.userId
+                    ]
+                );
+            }
 
             // Step 2: Insert GIS data into project_locations table
             if (coordinates && coordinates.length > 0) {
@@ -164,7 +190,13 @@ export const getProjects = async (req, res) => {
                      pl.road_name, pl.area_name, pl.latitude, pl.longitude, pl.geometry_type, pl.coordinates_json,
                      d.department_name, 
                      u.full_name as officer_name,
-                     c.company_name as contractor_name
+                     c.company_name as contractor_name,
+                     (SELECT pae.predicted_budget_bdt FROM project_ai_estimates pae
+                       WHERE pae.project_id = p.project_id AND pae.estimate_type = 'budget'
+                       ORDER BY pae.created_at DESC, pae.estimate_id DESC LIMIT 1) AS ai_estimated_budget_bdt,
+                     (SELECT pae.output_json FROM project_ai_estimates pae
+                       WHERE pae.project_id = p.project_id AND pae.estimate_type = 'materials'
+                       ORDER BY pae.created_at DESC, pae.estimate_id DESC LIMIT 1) AS latest_material_estimate
               FROM projects p
               LEFT JOIN project_locations pl ON p.project_id = pl.project_id
               LEFT JOIN departments d ON p.department_id = d.department_id
@@ -218,7 +250,8 @@ export const updateProject = async (req, res) => {
         budget,
         startDate: start_date,
         endDate: target_completion_date,
-        priority
+        priority,
+        aiBudgetEstimate
     } = req.body;
 
     const formatForMySQL = (dateString) => {

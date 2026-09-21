@@ -1,0 +1,141 @@
+{
+  "model_type": "Feed-forward neural network (scikit-learn MLPRegressor)",
+  "target": "Estimated_Budget",
+  "currency": "USD (same currency as source training data)",
+  "project_types": [
+    "ASPHALT",
+    "BRIDGE",
+    "BUILDINGS/MISC STRUCTURES",
+    "CLEARING",
+    "CONCRETE PAVEMENT",
+    "CONCRETE-CULVERTS",
+    "CONCRETE-MISC",
+    "DRAINAGE-PIPE",
+    "EROSION CONTROL",
+    "GRADING/EXCAVATION",
+    "GRASSING",
+    "GUARD RAIL",
+    "MOBILIZATION",
+    "PAINTING STRUCTURES",
+    "RETAINING WALL",
+    "SIGNALIZATION",
+    "SIGNS-PERMANENT",
+    "STRIPING/PAVEMENT MARKING",
+    "TRAFFIC CONTROL",
+    "UTILITY-WATER",
+    "Uncategorized Project"
+  ],
+  "inputs": {
+    "Number_of_BOQ_Items": {
+      "type": "number",
+      "min": 7.0,
+      "max": 573.0,
+      "median": 73.0
+    },
+    "Project_Year": {
+      "type": "number",
+      "min": 2018.0,
+      "max": 2024.0,
+      "median": 2021.0
+    },
+    "Excavation_CY": {
+      "type": "number",
+      "min": 0.0,
+      "max": 3814184.5999999996,
+      "median": 429.0
+    },
+    "Base_Stone_Ton": {
+      "type": "number",
+      "min": 0.0,
+      "max": 107369.5,
+      "median": 50.0
+    },
+    "Asphalt_Ton": {
+      "type": "number",
+      "min": 0.0,
+      "max": 517936.9,
+      "median": 748.0
+    },
+    "Concrete_Pavement_SY": {
+      "type": "number",
+      "min": 0.0,
+      "max": 516477.0,
+      "median": 0.0
+    },
+    "Drainage_Pipe_LF": {
+      "type": "number",
+      "min": 0.0,
+      "max": 401409.0,
+      "median": 59.0
+    },
+    "Drainage_Inlets_Each": {
+      "type": "number",
+      "min": 0.0,
+      "max": 823.0,
+      "median": 2.0
+    },
+    "Pavement_Marking_LF": {
+      "type": "number",
+      "min": 0.0,
+      "max": 3427874.0,
+      "median": 6806.0
+    },
+    "Guard_Rail_LF": {
+      "type": "number",
+      "min": 0.0,
+      "max": 173211.0,
+      "median": 0.0
+    },
+    "Riprap_Ton": {
+      "type": "number",
+      "min": 0.0,
+      "max": 58045.5,
+      "median": 42.0
+    },
+    "Grassing_SY": {
+      "type": "number",
+      "min": 0.0,
+      "max": 985034.0,
+      "median": 670.0
+    },
+    "Project_Type": {
+      "type": "category",
+      "values": [
+        "ASPHALT",
+        "BRIDGE",
+        "BUILDINGS/MISC STRUCTURES",
+        "CLEARING",
+        "CONCRETE PAVEMENT",
+        "CONCRETE-CULVERTS",
+        "CONCRETE-MISC",
+        "DRAINAGE-PIPE",
+        "EROSION CONTROL",
+        "GRADING/EXCAVATION",
+        "GRASSING",
+        "GUARD RAIL",
+        "MOBILIZATION",
+        "PAINTING STRUCTURES",
+        "RETAINING WALL",
+        "SIGNALIZATION",
+        "SIGNS-PERMANENT",
+        "STRIPING/PAVEMENT MARKING",
+        "TRAFFIC CONTROL",
+        "UTILITY-WATER",
+        "Uncategorized Project"
+      ]
+    }
+  },
+  "metrics": {
+    "r2": 0.719548094369698,
+    "mae": 1629813.275425327,
+    "rmse": 4738473.608915272,
+    "mape_percent": 55.80279199661652,
+    "baseline_r2": -0.00022329073573379432
+  },
+  "training_projects": 2973,
+  "notes": [
+    "Do not use raw_train.amount as an input; it leaks cost information.",
+    "Target is median contractor total bid per project.",
+    "BOQ quantities use the units shown in each field name."
+  ]
+}

@@ -48,6 +48,7 @@ export interface Department {
 
 export interface Project {
   id: string;
+  dbId?: number;
   name: string;
   type: string;
   department: string;
@@ -68,6 +69,8 @@ export interface Project {
   conflictLevel: 'None' | 'Low' | 'Medium' | 'High';
   approvalStatus: string;
   description: string;
+  aiEstimatedBudgetBdt?: number;
+  latestMaterialEstimate?: unknown;
 }
 
 export interface Registration {
@@ -171,7 +174,7 @@ export interface ToastMessage {
 }
 
 export interface RegistrationInput {
-  role: Exclude<Role, 'super_admin'>;
+  role: Role;
   name: string;
   email: string;
   phone: string;
@@ -199,6 +202,16 @@ export interface ProjectInput {
   road: string;
   area: string;
   coordinates: [number, number][];
+  aiBudgetEstimate?: {
+    input: Record<string, string | number>;
+    prediction: {
+      estimated_budget_usd: number;
+      estimated_budget_bdt: number;
+      exchange_rate_usd_to_bdt: number;
+      model_r2?: number;
+      training_projects?: number;
+    };
+  };
 }
 
 export interface ComplaintInput {

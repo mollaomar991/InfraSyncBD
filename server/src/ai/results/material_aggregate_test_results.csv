@@ -1,0 +1,77 @@
+floor_area_type,no_floors,construction_period_end,building_type,structure_type_subtype,function_type,country,region,urban_rural,actual_kg_per_m2,predicted_kg_per_m2
+,1.0,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,91.8777635,71.1984722618866
+,,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,138.7776749,153.0312894755529
+,,,residential,S_concretefloor,R_MFH_unspecified,USA,__MISSING__,urban,45.09796981,54.103443668224315
+,,2010.0,__MISSING__,RC_unspecified,Unspecified,China,__MISSING__,rural,1451.0,1289.4291573954852
+,,1979.0,__MISSING__,M_brick,NR_unspecified,China,__MISSING__,urban,1231.0,1119.2814547729097
+,4.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,82.62825343,74.2983939599419
+,,1999.0,SFH,T_traditional,R_SFH_detached,Japan,__MISSING__,__MISSING__,78.0,57.91071852175145
+,,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,119.3763948,153.0312894755529
+,2.0,1900.0,SFH,M_stone,R_SFH_unspecified,"South European countries (Malta, Cyprus, Portugal, Greece, Spain, Italy, France)",__MISSING__,Urban,90.0,186.58503947740934
+,25.45,,MFH,RC_prefab,R_MFH_tower,China,Schenzen,urban,357.2777778,420.63130217967097
+,,1980.0,MFH,Unspecified,R_MFH_unspecified,Sweden,__MISSING__,both,12.0,155.15420013385062
+,,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,55.89486857,64.67943587181179
+,,1979.0,__MISSING__,S_concretefloor,R_unspecified,China,avg,urban ,1066.0,1137.308226864491
+,1.0,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,53.09342182,71.1984722618866
+,4.0,1961.0,MFH,RC_unspecified,R_MFH_low,Sweden,__MISSING__,__MISSING__,23.0,41.54803478815188
+,6.0,,"Residential, Multi-family, low",T_traditional,R_MFH_high,Canada,TOR,urban,69.14111395,62.40216998040114
+,,1980.0,residential,Unspecified,R_MFH_unspecified,Sweden,Gothenburg,urban,10.0,210.16658181680756
+,,2009.0,SFH,T_traditional,R_SFH_detached,Japan,__MISSING__,__MISSING__,78.0,66.72581060520935
+,,1930.0,MFH,Unspecified,R_MFH_unspecified,Sweden,__MISSING__,both,259.0,234.92056029511323
+,2.0,1961.0,SFH,T_traditional,R_SFH_unspecified,Sweden,__MISSING__,__MISSING__,0.0,125.62844529101307
+,4.0,2010.0,MFH,RC_concretefloor,R_MFH_low,Brazil,Rio de Janeiro,urban,270.14,194.88040132673652
+,,1950.0,commercial,Unspecified,NR_retail,Sweden,Gothenburg,urban,48.0,360.14900927561405
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,103.0584165,90.69161064749903
+,3.3,1977.0,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,53.87425745,26.42328263607004
+,,,SFH,M_brick,R_SFH_unspecified,Luxembourg,Esch-sur-Alzette,urban,277.4949495,376.6289507469122
+,1.0,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,100.3892038,161.69521123155835
+,,1959.0,__MISSING__,M_brick,R_unspecified,China,__MISSING__,urban,1038.0,1028.2587473731262
+,,,SFH,RC_concretefloor,R_SFH_unspecified,Grenada,__MISSING__,__MISSING__,159.0,55.502235709977924
+,2.6,,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,8.415125996,18.993091800765853
+,,1969.0,SFH,M_brick,R_SFH_unspecified,Luxembourg,Esch-sur-Alzette,urban,342.3225806,435.76061227629964
+,2.0,1900.0,SFH,M_stone,R_SFH_unspecified,"Central European countries (Belgium, The Netherlands, Ireland, Hungary, Slovenia, Luxemburg, Germany, United Kingdom, Slovakia, Denmark, Czech Republic, Austri, Poland)",__MISSING__,Urban,170.0,296.6586253079135
+,1.0,,residential,T_traditional,R_SFH_unspecified,USA,__MISSING__,urban,62.65650666,71.1984722618866
+,,2006.0,MFH,RC_unspecified,R_MFH_high,China,Beijing,urban,1783.8,1076.6001522653464
+,,2000.0,mixed,Unspecified,NR_unspecified,China,Beijing,urban,1235.34,538.3864305036398
+,,1980.0,commercial,Unspecified,NR_retail,China,Beijing,urban,1612.38,1101.0254302646426
+,,1979.0,__MISSING__,M_brick,NR_unspecified,China,avg,urban,1081.0,1192.570714517805
+,5.0,2001.0,MFH,T_traditional,R_MFH_low,Sweden,__MISSING__,__MISSING__,0.0,81.06989604569043
+,,,education,RC_unspecified,NR_civic,China,avg,"urban, rural",669.0,1058.089795158804
+,5.0,1901.0,MFH,M_brick,R_MFH_low,Sweden,__MISSING__,__MISSING__,416.0,276.354538433405
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,62.41986456,90.69161064749903
+,,2012.0,__MISSING__,S_concretefloor,NR_unspecified,USA,Philadelphia,urban,88.0,68.36749954851649
+,4.0,1900.0,MFH,M_stone,R_MFH_low,"Central European countries (Belgium, The Netherlands, Ireland, Hungary, Slovenia, Luxemburg, Germany, United Kingdom, Slovakia, Denmark, Czech Republic, Austri, Poland)",__MISSING__,Urban,84.11458333,192.10056736907148
+,,2010.0,__MISSING__,Unspecified,R_unspecified,China,Beijing,rural,750.0,859.8536523915645
+,,2010.0,__MISSING__,RC_unspecified,R_unspecified,China,__MISSING__,urban,1451.0,1267.380629210405
+,2.0,,__MISSING__,T_traditional,Unspecified,China,__MISSING__,Rural,45.21,59.15884229032736
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,101.9840118,90.69161064749903
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,83.83665281,90.69161064749903
+,,1989.0,__MISSING__,RC_unspecified,R_unspecified,China,__MISSING__,urban,1113.0,1171.9832828023634
+,,1980.0,SFH,T_traditional,R_SFH_detached,Japan,__MISSING__,__MISSING__,46.0,54.95254749424282
+,,,residential,M_unspecified,R_SFH_unspecified,USA,__MISSING__,urban,124.2827379,153.0312894755529
+,2.5,1901.0,SFH,T_traditional,R_SFH_unspecified,Sweden,__MISSING__,__MISSING__,741.0,413.9184103595099
+,,,residential,T_traditional,R_SFH_detached,Japan,__MISSING__,urban,0.0,172.37800283801297
+,,,Health care,Unspecified,NR_civic,Netherlands,__MISSING__,urban,98.90815671,277.41200694262375
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,75.2612964,90.69161064749903
+,1.5,,SFH,M_brick,R_SFH_unspecified,"South European countries (Malta, Cyprus, Portugal, Greece, Spain, Italy, France)",__MISSING__,Urban,66.66666667,278.106698281248
+,3.3,,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,9.253207588,21.921617926347267
+,,1999.0,SFH,Unspecified,R_SFH_detached,Canada,Kitchener and Waterloo,urban,184.0,368.72296223010113
+,,,SFH,T_traditional,R_SFH_unspecified,Grenada,__MISSING__,__MISSING__,45.0,46.101098454046905
+,,1950.0,residential,Unspecified,R_SFH_unspecified,Sweden,Gothenburg,urban,74.0,403.6476153140654
+,3.0,1971.0,MFH,RC_unspecified,R_MFH_low,Sweden,__MISSING__,__MISSING__,59.0,29.449124038490027
+,3.0,2010.0,__MISSING__,S_unspecified,Unspecified,Japan,__MISSING__,__MISSING__,214.0,282.17897981442485
+,,2018.0,storage,Unspecified,NR_civic,China,Beijing,urban,0.0,510.8011822209877
+,7.0,1921.0,MFH,M_brick,R_MFH_high,Sweden,__MISSING__,__MISSING__,375.0,406.70651229691316
+,4.0,1931.0,MFH,T_unspecified,R_MFH_low,Sweden,__MISSING__,__MISSING__,52.0,156.01923221215512
+,5.0,,"Residential, Single Family, detached",T_traditional,R_SFH_detached,Canada,TOR,urban,70.27872745,90.69161064749903
+,2.0,2010.0,__MISSING__,S_unspecified,Unspecified,Japan,__MISSING__,__MISSING__,100.0,217.87973437895891
+,,2000.0,public,Unspecified,NR_civic,China,Beijing,urban,1020.96,998.6527036331504
+,3.2,,__MISSING__,Unspecified,R_unspecified,Austria,Vienna,urban,1.898089172,21.680588653314373
+,,2011.0,__MISSING__,Unspecified,R_unspecified,China,__MISSING__,urban,930.2,838.0856730083217
+,2.0,1945.0,SFH,M_brick,R_SFH_unspecified,"Central European countries (Belgium, The Netherlands, Ireland, Hungary, Slovenia, Luxemburg, Germany, United Kingdom, Slovakia, Denmark, Czech Republic, Austri, Poland)",__MISSING__,Urban,80.0,187.2668575839334
+,2.0,,MFH,T_traditional,R_MFH_low,China,__MISSING__,Rural,257.85,113.53862408634131
+,4.0,1945.0,MFH,M_stone,R_MFH_low,"South European countries (Malta, Cyprus, Portugal, Greece, Spain, Italy, France)",__MISSING__,Urban,84.11458333,11.332760786519657
+,,2009.0,MFH,RC_concretefloor,R_MFH_high,Japan,__MISSING__,__MISSING__,198.0,155.00736820480938
+,,2018.0,storage,Unspecified,NR_civic,China,Beijing,urban,19.52,510.8011822209877
+,,,MFH,RC_concretefloor,R_MFH_low,Luxembourg,Esch-sur-Alzette,urban,247.9455782,310.3249335689713
+,1.5,2001.0,SFH,T_traditional,R_SFH_unspecified,Sweden,__MISSING__,__MISSING__,0.0,0.0

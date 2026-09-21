@@ -17,6 +17,8 @@ import conflictRoutes from './src/routes/conflictRoutes.js';
 import coordinationRoutes from './src/routes/coordinationRoutes.js';
 import approvalRoutes from './src/routes/approvalRoutes.js';
 import contractorRoutes from './src/routes/contractorRoutes.js';
+import aiRoutes from './src/routes/aiRoutes.js';
+import { ensureAiSchema } from './src/services/aiSchema.js';
 
 const app = express();
 
@@ -37,6 +39,7 @@ app.use('/api/conflicts', conflictRoutes);
 app.use('/api/coordination', coordinationRoutes);
 app.use('/api/approvals', approvalRoutes);
 app.use('/api/contractors', contractorRoutes);
+app.use('/api/ai', aiRoutes);
 // Public departments route for registration form
 app.use('/api/departments', async (req, res) => {
     try {
@@ -55,6 +58,18 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+
+async function startServer() {
+    try {
+        await ensureAiSchema();
+        console.log('AI estimate storage ready.');
+    } catch (error) {
+        console.warn('AI estimate table could not be prepared yet:', error.message);
+    }
+
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+startServer();

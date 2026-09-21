@@ -1,0 +1,82 @@
+{
+  "model_name": "InfraSync BD AI Model 2 - Construction Material Quantity Estimator",
+  "model_type": "One feed-forward MLPRegressor per material target",
+  "dataset_file": "buildings.csv",
+  "excel_sheet": null,
+  "feature_map": {
+    "gross_floor_area": "floor_area_type",
+    "floors": "no_floors",
+    "construction_year": "construction_period_end",
+    "building_type": "building_type",
+    "structure_type": "structure_type_subtype",
+    "function_type": "function_type",
+    "country": "country",
+    "region": "region",
+    "urban_rural": "urban_rural"
+  },
+  "numeric_features": [
+    "floor_area_type",
+    "no_floors",
+    "construction_period_end"
+  ],
+  "categorical_features": [
+    "building_type",
+    "structure_type_subtype",
+    "function_type",
+    "country",
+    "region",
+    "urban_rural"
+  ],
+  "target_columns": {
+    "brick": "brick",
+    "cement": "cement",
+    "aggregate": "aggregates",
+    "steel": "steel"
+  },
+  "trained_targets": [
+    "aggregate",
+    "brick",
+    "cement",
+    "steel"
+  ],
+  "target_unit": "kg/m^2 of gross floor area (expected for MI datasets)",
+  "metrics": {
+    "brick": {
+      "target_column": "brick",
+      "usable_rows": 468,
+      "mae": 241.43968852932784,
+      "rmse": 379.8243049496581,
+      "r2": 0.34765295639851856,
+      "mape_percent": 2522.681300818798,
+      "baseline_r2": -0.003982516945108205
+    },
+    "cement": {
+      "target_column": "cement",
+      "usable_rows": 248,
+      "mae": 50.145700973969454,
+      "rmse": 113.40739494396858,
+      "r2": 0.5839596655854005,
+      "mape_percent": 2045.0272175976725,
+      "baseline_r2": -0.029717024331120445
+    },
+    "aggregate": {
+      "target_column": "aggregates",
+      "usable_rows": 380,
+      "mae": 114.38050478572605,
+      "rmse": 189.67848095415613,
+      "r2": 0.8182025046579577,
+      "mape_percent": 153.56236133627613,
+      "baseline_r2": -0.01132785449699325
+    },
+    "steel": {
+      "target_column": "steel",
+      "usable_rows": 702,
+      "mae": 32.80266031423034,
+      "rmse": 155.80871675719482,
+      "r2": 0.10649529126447088,
+      "mape_percent": 143142.56422363257,
+      "baseline_r2": -0.006367944957165417
+    }
+  },
+  "important_note": "If only aggregate is available, it may represent combined gravel/sand/slag and must not be described as pure sand."
+}
