@@ -23,9 +23,14 @@ function OfficerDashboard() {
         title={`${currentUser?.organization} Dashboard`}
         description="Create projects, coordinate with departments, complete approvals, assign contractors, review progress, manage complaints, and perform inspections."
         actions={
-          <Link className="button button-primary" to="/projects/new">
-            + Create project
-          </Link>
+          <div className="header-action-group">
+            <Link className="button button-secondary" to="/ai/materials">
+              AI Materials
+            </Link>
+            <Link className="button button-primary" to="/projects/new">
+              + Create project
+            </Link>
+          </div>
         }
       />
 
@@ -62,7 +67,7 @@ function OfficerDashboard() {
         />
         <StatCard
           label="Upcoming inspections"
-          value={inspections.filter((item) => item.result === 'Pending').length}
+          value={inspections.filter((item) => item.result === 'Scheduled').length}
           detail="Milestone quality checks"
           icon="◎"
           tone="blue"
