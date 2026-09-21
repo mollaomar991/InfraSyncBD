@@ -204,6 +204,7 @@ export function AppProvider({ children }: AppProviderProps) {
         // Map database fields to frontend Project interface
         const mapped = res.data.data.map((p: any) => ({
           id: p.project_code || `PRJ-${p.project_id}`,
+          dbId: Number(p.project_id),
           name: p.project_name,
           type: p.project_type || 'Road Construction',
           department: p.department_name || 'Unknown',
@@ -224,6 +225,8 @@ export function AppProvider({ children }: AppProviderProps) {
           conflictLevel: (p.status === 'conflict_detected' || p.status === 'under_approval' || p.status === 'under_coordination') ? 'High' : 'None',
           approvalStatus: p.status || 'draft',
           description: p.description || '',
+          aiEstimatedBudgetBdt: p.ai_estimated_budget_bdt ? Number(p.ai_estimated_budget_bdt) : undefined,
+          latestMaterialEstimate: p.latest_material_estimate || undefined,
         }));
         setProjects(mapped);
       }
@@ -542,6 +545,7 @@ export function AppProvider({ children }: AppProviderProps) {
     updateUserStatus,
     addComplaint,
     updateRegistrationStatus,
+    updateProject,
     updateProjectProgress,
     updateComplaintStatus,
     showToast,
