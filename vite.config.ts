@@ -5,6 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    open: true,
+    // Do not ask Vite to spawn the default browser on Windows.
+    // Open http://localhost:5173 manually instead.
+    open: false,
   },
 });
