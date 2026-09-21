@@ -26,9 +26,14 @@ function ContractorDashboard() {
         title="Contractor Dashboard"
         description="View assigned projects, submit physical and financial progress, respond to complaints, and complete inspection rework."
         actions={
-          <Link className="button button-primary" to="/progress">
-            Submit progress
-          </Link>
+          <div className="header-action-group">
+            <Link className="button button-secondary" to="/ai/materials">
+              AI Materials
+            </Link>
+            <Link className="button button-primary" to="/progress">
+              Submit progress
+            </Link>
+          </div>
         }
       />
 
