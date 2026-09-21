@@ -44,6 +44,12 @@ export const navigationItems: NavigationItem[] = [
     roles: ['department_officer'],
   },
   {
+    label: 'AI Materials',
+    path: '/ai/materials',
+    icon: 'AI',
+    roles: ['department_officer', 'contractor'],
+  },
+  {
     label: 'GIS Map',
     path: '/map',
     icon: '⌖',
