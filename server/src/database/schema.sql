@@ -205,7 +205,7 @@ CREATE TABLE inspections (
     milestone_id INT NULL,
     inspector_officer_id INT NOT NULL,
     scheduled_date DATETIME NOT NULL,
-    result ENUM('pending', 'passed', 'passed_with_conditions', 'failed', 'reinspection_required') DEFAULT 'pending',
+    result ENUM('pending', 'under_review', 'passed', 'passed_with_conditions', 'failed', 'reinspection_required') DEFAULT 'pending',
     engineer_remarks TEXT NULL,
     inspection_photos_url VARCHAR(255) NULL,
     completed_at DATETIME NULL,
