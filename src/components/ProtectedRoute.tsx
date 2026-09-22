@@ -13,6 +13,14 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const location = useLocation();
 
   if (!currentUser) {
+    const token = localStorage.getItem('infrasync_token');
+    if (token) {
+      return (
+        <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>
+          Validating session...
+        </div>
+      );
+    }
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
