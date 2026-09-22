@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import StatusBadge from '../components/StatusBadge';
@@ -8,23 +8,12 @@ import type { Inspection } from '../types';
 
 function InspectionsPage() {
   const [inspectionItems, setInspectionItems] = useState<any[]>([]);
-  const { currentUser, showToast, projects } = useApp();
+  const { currentUser, showToast, projects, eligibleProjects } = useApp();
   const [scheduleProjectId, setScheduleProjectId] = useState('');
   const [scheduleDate, setScheduleDate] = useState('');
-  const [checkedItems, setCheckedItems] = useState<Record<string, string[]>>(() => {
-    const saved = localStorage.getItem('inspectionCheckedItems');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [checkedItems, setCheckedItems] = useState<Record<string, string[]>>({});
 
-  useEffect(() => {
-    localStorage.setItem('inspectionCheckedItems', JSON.stringify(checkedItems));
-  }, [checkedItems]);
 
-  useEffect(() => {
-    if (projects.length > 0 && !scheduleProjectId) {
-      setScheduleProjectId(projects[0].id);
-    }
-  }, [projects, scheduleProjectId]);
 
   if (!currentUser) return null;
 
@@ -36,18 +25,27 @@ function InspectionsPage() {
     fetchInspections();
   }, []);
 
+  useEffect(() => {
+    if (eligibleProjects.length > 0 && !scheduleProjectId) {
+      setScheduleProjectId(String(eligibleProjects[0].dbId));
+    }
+  }, [eligibleProjects, scheduleProjectId]);
+
   async function fetchInspections() {
     try {
       const res = await api.get('/inspections');
       if (res.data.success) {
         setInspectionItems(res.data.data.map((item: any) => ({
           id: item.inspection_id,
-          project: `Project ${item.project_id}`,
+          projectId: item.project_id,
+          project: item.project_name || `Project ${item.project_id}`,
+          contractor: item.contractor_name || 'Unassigned Contractor',
           milestone: item.milestone_id ? `Milestone ${item.milestone_id}` : 'General Inspection',
           date: item.scheduled_date,
-          result: item.result === 'pending' ? 'Pending' : item.result === 'passed' ? 'Passed' : item.result === 'failed' ? 'Failed' : 'Reinspection Required',
-          inspector: `Officer ${item.inspector_officer_id}`,
-          failedItems: 0
+          result: item.result === 'pending' ? 'Pending' : item.result === 'under_review' ? 'Under Review' : item.result === 'passed' ? 'Passed' : item.result === 'failed' ? 'Failed' : 'Reinspection Required',
+          inspector: item.inspector_name || `Officer ${item.inspector_officer_id}`,
+          failedItems: 0,
+          checklist: item.checklist || []
         })));
       }
     } catch (e) {
@@ -55,18 +53,28 @@ function InspectionsPage() {
     }
   }
 
+  const visibleInspections = useMemo(() => {
+    if (isAdmin) return inspectionItems;
+    const eligibleIds = new Set(eligibleProjects.map(p => p.dbId));
+    return inspectionItems.filter((inspection) => eligibleIds.has(inspection.projectId));
+  }, [inspectionItems, eligibleProjects, isAdmin]);
+
   async function updateResult(
     inspectionId: string,
-    result: Inspection['result'],
+    result: string,
     failedItems = 0,
+    checklistToSave?: string[]
   ) {
     try {
-      const dbResult = result === 'Passed' ? 'passed' : result === 'Failed' ? 'failed' : 'reinspection_required';
-      const res = await api.post(`/inspections/${inspectionId}/save`, {
+      const dbResult = result === 'Passed' ? 'passed' : result === 'Failed' ? 'failed' : result === 'Under Review' ? 'under_review' : 'reinspection_required';
+      const payload: any = {
         result: dbResult,
-        remarks: 'Reviewed by officer',
-        checklist: []
-      });
+        remarks: 'Workflow update'
+      };
+      if (checklistToSave !== undefined) {
+        payload.checklist = checklistToSave;
+      }
+      const res = await api.post(`/inspections/${inspectionId}/save`, payload);
       if (res.data.success) {
         setInspectionItems((items) =>
           items.map((item) =>
@@ -117,7 +125,7 @@ function InspectionsPage() {
       )}
 
       <div className="inspection-grid">
-        {inspectionItems.map((inspection) => (
+        {visibleInspections.map((inspection) => (
           <article className="inspection-card" key={inspection.id}>
             <div className="inspection-date">
               <span>{new Date(inspection.date).toLocaleString('en', { month: 'short' })}</span>
@@ -129,7 +137,7 @@ function InspectionsPage() {
                 <div>
                   <span>{inspection.id}</span>
                   <h2>{inspection.project}</h2>
-                  <p>{inspection.milestone}</p>
+                  <p>{inspection.contractor} · {inspection.milestone}</p>
                 </div>
                 <StatusBadge status={inspection.result} />
               </div>
@@ -153,14 +161,10 @@ function InspectionsPage() {
                   'Traffic management',
                   'Site cleanliness',
                 ].map((check, index) => {
-                  const hasUserCheckedData = !!checkedItems[inspection.id];
-                  const userChecked = (checkedItems[inspection.id] || []).includes(check);
+                  const hasLocalData = checkedItems[inspection.id] !== undefined;
+                  const isChecked = hasLocalData ? (checkedItems[inspection.id] || []).includes(check) : inspection.checklist.includes(check);
                   
-                  // Fallback for older passed/failed inspections without local data
-                  const staticChecked = inspection.result === 'Passed' || (inspection.result === 'Failed' && index < 3);
-                  
-                  const isChecked = hasUserCheckedData ? userChecked : staticChecked;
-                  const isInteractive = isOfficer && inspection.result === 'Pending';
+                  const isInteractive = isContractor && (inspection.result === 'Pending' || inspection.result === 'Failed');
 
                   if (isInteractive) {
                     return (
@@ -177,9 +181,16 @@ function InspectionsPage() {
                   }
 
                   return (
-                    <span key={check} className={isChecked ? 'passed' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {isChecked ? '✓' : '○'} {check}
-                    </span>
+                    <label key={check} className={isChecked ? 'passed' : ''} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isChecked ? '#10b981' : 'inherit' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked} 
+                        readOnly 
+                        disabled
+                        style={{ width: '16px', height: '16px', accentColor: '#10b981' }}
+                      />
+                      {check}
+                    </label>
                   );
                 })}
               </div>
@@ -190,7 +201,7 @@ function InspectionsPage() {
                     className="button button-primary"
                     type="button"
                     onClick={() => updateResult(inspection.id, 'Passed')}
-                    disabled={inspection.result !== 'Pending'}
+                    disabled={inspection.result !== 'Under Review'}
                   >
                     Pass inspection
                   </button>
@@ -198,26 +209,26 @@ function InspectionsPage() {
                     className="button button-secondary"
                     type="button"
                     onClick={() => {
-                       const checksDone = (checkedItems[inspection.id] || []).length;
-                       updateResult(inspection.id, 'Failed', 5 - checksDone);
+                       updateResult(inspection.id, 'Failed', 1);
                     }}
-                    disabled={inspection.result !== 'Pending'}
+                    disabled={inspection.result !== 'Under Review'}
                   >
                     Fail & request rework
                   </button>
                 </div>
               )}
 
-              {isContractor && inspection.result === 'Failed' && (
+              {isContractor && (inspection.result === 'Pending' || inspection.result === 'Failed') && (
                 <button
                   className="button button-primary"
                   type="button"
+                  style={{ marginTop: '1.5rem' }}
                   onClick={() => {
-                    updateResult(inspection.id, 'Reinspection Required');
-                    showToast('Rework evidence submitted and reinspection requested.');
+                    const toSave = checkedItems[inspection.id] !== undefined ? checkedItems[inspection.id] : inspection.checklist;
+                    updateResult(inspection.id, 'Under Review', 0, toSave);
                   }}
                 >
-                  Submit rework & request reinspection
+                  Submit to Engineer for Review
                 </button>
               )}
 
@@ -240,13 +251,21 @@ function InspectionsPage() {
         ))}
       </div>
 
+      {!visibleInspections.length && (
+        <div className="empty-state large">
+          <span>◉</span>
+          <h3>No inspections found</h3>
+          <p>You don't have any project inspections scheduled yet.</p>
+        </div>
+      )}
+
       {isOfficer && (
         <Panel title="Schedule a new inspection" subtitle="Demo scheduling interaction">
           <div className="form-grid form-grid-4">
             <label className="form-field">
               <span>Project</span>
               <select value={scheduleProjectId} onChange={(e) => setScheduleProjectId(e.target.value)}>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {eligibleProjects.map(p => <option key={p.dbId} value={p.dbId}>{p.name}</option>)}
               </select>
             </label>
             <label className="form-field">
@@ -263,9 +282,7 @@ function InspectionsPage() {
               onClick={async () => {
                 if(!scheduleDate) return showToast('Select a date', 'error');
                 try {
-                  // Ensure we use a valid project ID that exists in our seeded MySQL database (1 or 2)
-                  const pid = scheduleProjectId === 'PRJ-2402' ? 2 : 1;
-                  const res = await api.post('/inspections/schedule', { projectId: pid, scheduledDate: scheduleDate });
+                  const res = await api.post('/inspections/schedule', { projectId: Number(scheduleProjectId), scheduledDate: scheduleDate });
                   if (res.data.success) {
                     showToast('Inspection scheduled.');
                     fetchInspections();

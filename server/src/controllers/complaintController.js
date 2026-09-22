@@ -36,9 +36,10 @@ export const submitComplaint = async (req, res) => {
 export const getComplaints = async (req, res) => {
     try {
         const [rows] = await pool.query(`
-            SELECT c.*, u.full_name as citizen_name 
+            SELECT c.*, u.full_name as citizen_name, cp.company_name as assigned_contractor_name
             FROM complaints c 
             LEFT JOIN users u ON c.citizen_user_id = u.user_id 
+            LEFT JOIN contractor_profiles cp ON c.assigned_contractor_id = cp.contractor_id
             ORDER BY c.created_at DESC
         `);
         res.json({ success: true, data: rows });
@@ -72,18 +73,33 @@ export const resolveComplaint = async (req, res) => {
 export const updateComplaintStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, assignedContractorName } = req.body;
         
         let dbStatus = 'submitted';
-        if (status === 'Assigned') dbStatus = 'under_review';
+        if (status === 'Assigned') dbStatus = 'assigned';
         else if (status === 'In Progress') dbStatus = 'in_progress';
         else if (status === 'Resolved') dbStatus = 'resolved';
         else if (status === 'Closed') dbStatus = 'closed';
 
-        await pool.query(
-            `UPDATE complaints SET status = ? WHERE complaint_ticket_no = ?`,
-            [dbStatus, id]
-        );
+        if (assignedContractorName) {
+            const [contractorRows] = await pool.query('SELECT contractor_id FROM contractor_profiles WHERE company_name = ?', [assignedContractorName]);
+            if (contractorRows.length > 0) {
+                await pool.query(
+                    `UPDATE complaints SET status = ?, assigned_contractor_id = ? WHERE complaint_ticket_no = ?`,
+                    [dbStatus, contractorRows[0].contractor_id, id]
+                );
+            } else {
+                await pool.query(
+                    `UPDATE complaints SET status = ? WHERE complaint_ticket_no = ?`,
+                    [dbStatus, id]
+                );
+            }
+        } else {
+            await pool.query(
+                `UPDATE complaints SET status = ? WHERE complaint_ticket_no = ?`,
+                [dbStatus, id]
+            );
+        }
 
         res.json({ success: true, message: 'Status updated' });
     } catch (error) {

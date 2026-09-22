@@ -7,7 +7,7 @@ import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 
 function ProgressPage() {
-  const { currentUser, projects, updateProjectProgress, showToast } = useApp();
+  const { currentUser, projects, eligibleProjects, updateProjectProgress, showToast } = useApp();
   const [selectedProjectId, setSelectedProjectId] = useState('');
   
   useEffect(() => {
@@ -85,7 +85,7 @@ function ProgressPage() {
                 value={selectedProjectId}
                 onChange={(event) => chooseProject(event.target.value)}
               >
-                {projects.map((project) => (
+                {eligibleProjects.map((project) => (
                   <option value={project.id} key={project.id}>
                     {project.name}
                   </option>

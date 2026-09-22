@@ -58,11 +58,13 @@ export const login = async (req, res) => {
     try {
         const [users] = await pool.query(`
             SELECT u.*, r.role_name, 
-            d.department_name as organization 
+            d.department_name as officer_org,
+            cp.company_name as contractor_org
             FROM users u
             JOIN roles r ON u.role_id = r.role_id
             LEFT JOIN officer_profiles op ON u.user_id = op.user_id
             LEFT JOIN departments d ON op.department_id = d.department_id
+            LEFT JOIN contractor_profiles cp ON u.user_id = cp.user_id
             WHERE u.email = ?`, [email]);
             
         if (users.length === 0) return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -85,7 +87,7 @@ export const login = async (req, res) => {
                 name: user.full_name,
                 email: user.email,
                 role: user.role_name,
-                organization: user.organization || (user.role_name === 'contractor' ? 'Contractor Company' : (user.role_name === 'super_admin' ? 'InfraSync BD Administration' : 'Public User')),
+                organization: user.officer_org || user.contractor_org || (user.role_name === 'super_admin' ? 'InfraSync BD Administration' : 'Public User'),
                 accountStatus: user.account_status
             }
         });
@@ -99,11 +101,13 @@ export const getMe = async (req, res) => {
     try {
         const [users] = await pool.query(`
             SELECT u.*, r.role_name, 
-            d.department_name as organization 
+            d.department_name as officer_org,
+            cp.company_name as contractor_org
             FROM users u
             JOIN roles r ON u.role_id = r.role_id
             LEFT JOIN officer_profiles op ON u.user_id = op.user_id
             LEFT JOIN departments d ON op.department_id = d.department_id
+            LEFT JOIN contractor_profiles cp ON u.user_id = cp.user_id
             WHERE u.user_id = ?`, [req.user.userId]);
             
         if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
@@ -116,7 +120,7 @@ export const getMe = async (req, res) => {
                 name: user.full_name,
                 email: user.email,
                 role: user.role_name,
-                organization: user.organization || (user.role_name === 'contractor' ? 'Contractor Company' : (user.role_name === 'super_admin' ? 'InfraSync BD Administration' : 'Public User')),
+                organization: user.officer_org || user.contractor_org || (user.role_name === 'super_admin' ? 'InfraSync BD Administration' : 'Public User'),
                 accountStatus: user.account_status
             }
         });

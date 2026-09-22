@@ -47,6 +47,7 @@ interface AppContextValue {
   refreshProjects: () => Promise<void>;
   complaints: Complaint[];
   registrations: Registration[];
+  eligibleProjects: Project[];
   notifications: NotificationItem[];
   approvals: Approval[];
   conflicts: Conflict[];
@@ -383,6 +384,16 @@ export function AppProvider({ children }: AppProviderProps) {
     }
   }
 
+  const eligibleProjects = useMemo(() => {
+    if (currentUser?.role === 'contractor') {
+      return projects.filter((project) => project.contractor === currentUser.organization);
+    }
+    if (currentUser?.role === 'department_officer') {
+      return projects.filter((project) => project.department === currentUser.organization);
+    }
+    return projects;
+  }, [currentUser, projects]);
+
   async function updateProject(id: string, input: Partial<ProjectInput>): Promise<void> {
     try {
       const numericId = id.replace('PRJ-', '');
@@ -528,6 +539,7 @@ export function AppProvider({ children }: AppProviderProps) {
     users,
     departments,
     projects,
+    eligibleProjects,
     complaints,
     registrations,
     notifications,
