@@ -3,17 +3,43 @@ import pool from '../config/db.js';
 export const getInspections = async (req, res) => {
     try {
         const { projectId } = req.query;
-        let query = `SELECT * FROM inspections`;
+        let query = `
+            SELECT i.*, p.project_name, cp.company_name as contractor_name, u.full_name as inspector_name
+            FROM inspections i
+            LEFT JOIN projects p ON i.project_id = p.project_id
+            LEFT JOIN contractor_profiles cp ON p.assigned_contractor_id = cp.contractor_id
+            LEFT JOIN officer_profiles op ON i.inspector_officer_id = op.officer_id
+            LEFT JOIN users u ON op.user_id = u.user_id
+        `;
         const params = [];
         
         if (projectId) {
-            query += ` WHERE project_id = ?`;
+            query += ` WHERE i.project_id = ?`;
             params.push(projectId);
         }
         
-        query += ` ORDER BY scheduled_date DESC`;
+        query += ` ORDER BY i.scheduled_date DESC`;
         
         const [rows] = await pool.query(query, params);
+        
+        if (rows.length > 0) {
+            const inspectionIds = rows.map(r => r.inspection_id);
+            const [checklistItems] = await pool.query(`SELECT * FROM inspection_checklist_items WHERE inspection_id IN (?)`, [inspectionIds]);
+            
+            // Group checklist items by inspection_id
+            const checklistMap = {};
+            checklistItems.forEach(item => {
+                if (!checklistMap[item.inspection_id]) {
+                    checklistMap[item.inspection_id] = [];
+                }
+                checklistMap[item.inspection_id].push(item.criteria_title); // Since we just need an array of checked titles for now
+            });
+            
+            rows.forEach(r => {
+                r.checklist = checklistMap[r.inspection_id] || [];
+            });
+        }
+        
         res.json({ success: true, data: rows });
     } catch (error) {
         console.error('Error fetching inspections:', error);
@@ -52,12 +78,13 @@ export const saveInspectionResult = async (req, res) => {
             [result, remarks, id]
         );
         
-        // Insert checklist items if provided
-        if (checklist && Array.isArray(checklist)) {
+        // Insert checklist items if provided (first clear old ones)
+        if (checklist !== undefined && Array.isArray(checklist)) {
+            await pool.query(`DELETE FROM inspection_checklist_items WHERE inspection_id = ?`, [id]);
             for (const item of checklist) {
                 await pool.query(
                     `INSERT INTO inspection_checklist_items (inspection_id, criteria_title, status) VALUES (?, ?, ?)`,
-                    [id, item.title, item.status]
+                    [id, item, 'pass'] // Simplified since we are just storing checked item titles
                 );
             }
         }
@@ -74,7 +101,7 @@ export const saveInspectionResult = async (req, res) => {
             }
         }
         
-        res.json({ success: true, message: 'Inspection result saved. ' + (result === 'failed' ? 'Rework order issued.' : '') });
+        res.json({ success: true, message: 'Inspection result saved.' });
     } catch (error) {
         console.error('Error saving inspection result:', error);
         res.status(500).json({ success: false, message: 'Server error' });

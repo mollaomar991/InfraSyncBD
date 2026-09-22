@@ -33,7 +33,7 @@ function ComplaintsPage() {
           citizen: c.citizen_name || 'Citizen',
           citizenId: c.citizen_user_id,
           department: 'Public Works',
-          assignedTo: c.assigned_contractor_id ? 'Contractor' : 'Unassigned',
+          assignedTo: c.assigned_contractor_name || (c.assigned_contractor_id ? 'Contractor' : 'Unassigned'),
           priority: 'Medium',
           submittedDate: new Date(c.created_at).toLocaleDateString()
         })));
@@ -67,7 +67,7 @@ function ComplaintsPage() {
 
   async function setStatus(complaint: any, status: string, assignedContractorName?: string) {
     try {
-       const res = await api.put(`/complaints/${complaint.id}/status`, { status });
+       const res = await api.put(`/complaints/${complaint.id}/status`, { status, assignedContractorName });
        if (res.data.success) {
          setApiComplaints((current) => current.map(c => c.id === complaint.id ? { ...c, status, assignedTo: assignedContractorName || c.assignedTo } : c));
          showToast(`Status updated to ${status}`);

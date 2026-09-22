@@ -17,29 +17,11 @@ function ProjectsPage() {
   const [editEndDate, setEditEndDate] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   
-  const { currentUser, projects, updateProject } = useApp();
+  const { currentUser, projects, updateProject, eligibleProjects } = useApp();
 
   if (!currentUser) return null;
 
-  const roleProjects = useMemo(() => {
-    if (currentUser.role === 'department_officer') {
-      const ownProjects = projects.filter(
-        (project) => project.department === currentUser.organization,
-      );
-      return ownProjects.length ? ownProjects : projects;
-    }
-
-    if (currentUser.role === 'contractor') {
-      const assignedProjects = projects.filter(
-        (project) => project.contractor === currentUser.organization,
-      );
-      return assignedProjects.length ? assignedProjects : projects.slice(0, 2);
-    }
-
-    return projects;
-  }, [currentUser, projects]);
-
-  const filteredProjects = roleProjects.filter((project) => {
+  const filteredProjects = eligibleProjects.filter((project) => {
     const searchValue = searchText.trim().toLowerCase();
     const matchesSearch =
       !searchValue ||
