@@ -1,12 +1,12 @@
-import {
+import React, {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
-  type ReactNode,
+  type ReactNode
 } from 'react';
 
-// Removed mockData imports
 import api from '../api/axiosClient';
 import type {
   AccountStatus,
@@ -267,10 +267,10 @@ export function AppProvider({ children }: AppProviderProps) {
     try {
       const res = await api.get('/inspections');
       if (res.data.success) {
-         setInspections(res.data.data.map((item: any) => ({
-            ...item,
-            result: item.result === 'pending' ? 'Pending' : item.result === 'passed' ? 'Passed' : item.result === 'failed' ? 'Failed' : 'Reinspection Required',
-         })));
+        setInspections(res.data.data.map((item: any) => ({
+          ...item,
+          result: item.result === 'pending' ? 'Pending' : item.result === 'passed' ? 'Passed' : item.result === 'failed' ? 'Failed' : 'Reinspection Required',
+        })));
       }
     } catch (e) { console.error(e); }
   }
