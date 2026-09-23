@@ -56,8 +56,15 @@ function ContractorsPage() {
 
     setAssigning(true);
     try {
+      const actualProject = projects.find(p => p.id === selectedProjectId);
+      if (!actualProject) {
+        showToast('Project not found.', 'error');
+        setAssigning(false);
+        return;
+      }
+
       await api.post('/contractors/assign', {
-        projectId: parseInt(selectedProjectId.replace('PRJ-', '')),
+        projectId: actualProject.dbId,
         contractorId: parseInt(selectedContractorId)
       });
       
