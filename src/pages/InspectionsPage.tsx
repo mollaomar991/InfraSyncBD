@@ -265,7 +265,7 @@ function InspectionsPage() {
             <label className="form-field">
               <span>Project</span>
               <select value={scheduleProjectId} onChange={(e) => setScheduleProjectId(e.target.value)}>
-                {eligibleProjects.map(p => <option key={p.dbId} value={p.dbId}>{p.name}</option>)}
+                {eligibleProjects.map(p => <option key={p.dbId} value={p.dbId}>{p.id} - {p.name}</option>)}
               </select>
             </label>
             <label className="form-field">
