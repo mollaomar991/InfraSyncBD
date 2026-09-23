@@ -57,7 +57,7 @@ function ContractorsPage() {
     setAssigning(true);
     try {
       await api.post('/contractors/assign', {
-        projectId: parseInt(selectedProjectId),
+        projectId: parseInt(selectedProjectId.replace('PRJ-', '')),
         contractorId: parseInt(selectedContractorId)
       });
       
