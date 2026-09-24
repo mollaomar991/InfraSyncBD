@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import api from '../api/axiosClient';
 import type { Inspection } from '../types';
 
+// added new in inspection
 function InspectionsPage() {
   const [inspectionItems, setInspectionItems] = useState<any[]>([]);
   const { currentUser, showToast, projects, eligibleProjects } = useApp();
@@ -61,11 +62,11 @@ function InspectionsPage() {
       const eligibleIds = new Set(eligibleProjects.map(p => p.dbId));
       filtered = filtered.filter((inspection) => eligibleIds.has(inspection.projectId));
     }
-    
+
     if (statusFilter !== 'All') {
       filtered = filtered.filter(i => i.result === statusFilter);
     }
-    
+
     return filtered;
   }, [inspectionItems, eligibleProjects, isAdmin, statusFilter]);
 
@@ -192,16 +193,16 @@ function InspectionsPage() {
                 ].map((check, index) => {
                   const hasLocalData = checkedItems[inspection.id] !== undefined;
                   const isChecked = hasLocalData ? (checkedItems[inspection.id] || []).includes(check) : inspection.checklist.includes(check);
-                  
+
                   const isInteractive = isContractor && (inspection.result === 'Pending' || inspection.result === 'Failed');
 
                   if (isInteractive) {
                     return (
                       <label key={check} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: isChecked ? '#10b981' : 'inherit' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked} 
-                          onChange={() => toggleCheck(inspection.id, check)} 
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleCheck(inspection.id, check)}
                           style={{ width: '16px', height: '16px', accentColor: '#10b981' }}
                         />
                         {check}
@@ -211,10 +212,10 @@ function InspectionsPage() {
 
                   return (
                     <label key={check} className={isChecked ? 'passed' : ''} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isChecked ? '#10b981' : 'inherit' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={isChecked} 
-                        readOnly 
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        readOnly
                         disabled
                         style={{ width: '16px', height: '16px', accentColor: '#10b981' }}
                       />
@@ -238,7 +239,7 @@ function InspectionsPage() {
                     className="button button-secondary"
                     type="button"
                     onClick={() => {
-                       updateResult(inspection.id, 'Failed', 1);
+                      updateResult(inspection.id, 'Failed', 1);
                     }}
                     disabled={inspection.result !== 'Under Review'}
                   >
@@ -309,15 +310,15 @@ function InspectionsPage() {
               className="button button-primary align-end"
               type="button"
               onClick={async () => {
-                if(!scheduleDate) return showToast('Select a date', 'error');
+                if (!scheduleDate) return showToast('Select a date', 'error');
                 try {
                   const res = await api.post('/inspections/schedule', { projectId: Number(scheduleProjectId), scheduledDate: scheduleDate });
                   if (res.data.success) {
                     showToast('Inspection scheduled.');
                     fetchInspections();
                   }
-                } catch(e) {
-                   showToast('Error scheduling inspection', 'error');
+                } catch (e) {
+                  showToast('Error scheduling inspection', 'error');
                 }
               }}
             >
