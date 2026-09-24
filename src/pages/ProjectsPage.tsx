@@ -162,7 +162,7 @@ function ProjectsPage() {
               <Link className="button button-ghost" to={`/map?project=${project.id}`}>
                 View on map
               </Link>
-              {project.status === 'rework_required' && (
+              {project.status === 'Rework Required' && (
                 <button
                   className="button button-primary"
                   type="button"
