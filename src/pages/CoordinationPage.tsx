@@ -16,6 +16,7 @@ interface CoordinationRequest {
   status: 'Pending' | 'Accepted' | 'Change Requested' | 'Rejected';
 }
 
+// fixed page ui
 function CoordinationPage() {
   const [requests, setRequests] = useState<CoordinationRequest[]>([]);
   const [comment, setComment] = useState('');
