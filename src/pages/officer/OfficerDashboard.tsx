@@ -7,6 +7,7 @@ import StatusBadge from '../../components/StatusBadge';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils';
 
+// fixed officer dashboard divs
 function OfficerDashboard() {
   const { currentUser, projects, complaints, approvals, conflicts, inspections } = useApp();
   const departmentProjects = projects.filter(
