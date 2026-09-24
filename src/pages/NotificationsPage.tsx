@@ -3,6 +3,7 @@ import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import { useApp } from '../context/AppContext';
 
+// adjust the nofication ui
 function NotificationsPage() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [readIds, setReadIds] = useState<string[]>([]);
