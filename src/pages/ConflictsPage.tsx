@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import api from '../api/axiosClient';
 import type { Conflict } from '../types';
 
+// fixed page ui
 function ConflictsPage() {
   const [conflictItems, setConflictItems] = useState<Conflict[]>([]);
   const [levelFilter, setLevelFilter] = useState('All');
