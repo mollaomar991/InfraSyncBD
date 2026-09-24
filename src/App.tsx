@@ -121,6 +121,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* added ai material route */}
           <Route
             path="/ai/materials"
             element={
