@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext';
 import { getInitials, roleLabel } from '../utils';
 import styles from './AppLayout.module.css';
 
+// added ai model link
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { currentUser, logout, notifications } = useApp();
