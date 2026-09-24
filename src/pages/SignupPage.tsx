@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext';
 import type { RegistrationInput, Role } from '../types';
 import styles from './AuthPages.module.css';
 
+// Fixed this element: SignupRole
 interface SignupRole {
   role: Role;
   label: string;
