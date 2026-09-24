@@ -7,6 +7,7 @@ import ProjectMap from '../components/ProjectMap';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 
+// Main component for rendering the interactive map and project filtering logic
 function MapPage() {
   const [searchParams] = useSearchParams();
   const [category, setCategory] = useState('All');
