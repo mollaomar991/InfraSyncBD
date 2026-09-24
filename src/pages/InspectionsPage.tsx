@@ -53,11 +53,21 @@ function InspectionsPage() {
     }
   }
 
+  const [statusFilter, setStatusFilter] = useState('All');
+
   const visibleInspections = useMemo(() => {
-    if (isAdmin) return inspectionItems;
-    const eligibleIds = new Set(eligibleProjects.map(p => p.dbId));
-    return inspectionItems.filter((inspection) => eligibleIds.has(inspection.projectId));
-  }, [inspectionItems, eligibleProjects, isAdmin]);
+    let filtered = inspectionItems;
+    if (!isAdmin) {
+      const eligibleIds = new Set(eligibleProjects.map(p => p.dbId));
+      filtered = filtered.filter((inspection) => eligibleIds.has(inspection.projectId));
+    }
+    
+    if (statusFilter !== 'All') {
+      filtered = filtered.filter(i => i.result === statusFilter);
+    }
+    
+    return filtered;
+  }, [inspectionItems, eligibleProjects, isAdmin, statusFilter]);
 
   async function updateResult(
     inspectionId: string,
@@ -123,6 +133,25 @@ function InspectionsPage() {
           </p>
         </div>
       )}
+
+      <Panel>
+        <div className="filter-bar">
+          <label className="select-box">
+            <span>Filter by Result</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="Pending">Pending</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Passed">Passed</option>
+              <option value="Failed">Failed</option>
+              <option value="Reinspection Required">Reinspection Required</option>
+            </select>
+          </label>
+        </div>
+      </Panel>
 
       <div className="inspection-grid">
         {visibleInspections.map((inspection) => (

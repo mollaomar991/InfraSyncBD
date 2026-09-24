@@ -10,6 +10,8 @@ function ComplaintsPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [apiComplaints, setApiComplaints] = useState<any[]>([]);
   const [assigningComplaint, setAssigningComplaint] = useState<any | null>(null);
+  const [submittingEvidenceComplaint, setSubmittingEvidenceComplaint] = useState<any | null>(null);
+  const [viewingEvidenceComplaint, setViewingEvidenceComplaint] = useState<any | null>(null);
   const [selectedContractor, setSelectedContractor] = useState('');
   const { currentUser, showToast, addNotification, contractors } = useApp();
 
@@ -182,30 +184,42 @@ function ComplaintsPage() {
               <div className="card-actions">
                 {isOfficer && (
                   <>
-                    <button
-                      className="button button-primary"
-                      type="button"
-                      onClick={() => setAssigningComplaint(complaint)}
-                    >
-                      Assign complaint
-                    </button>
-                    <button
-                      className="button button-secondary"
-                      type="button"
-                      onClick={() => setStatus(complaint, 'Resolved')}
-                    >
-                      Verify & resolve
-                    </button>
+                    {(complaint.status === 'Submitted' || complaint.assignedTo === 'Unassigned') && complaint.status !== 'Resolved' && complaint.status !== 'Closed' && (
+                      <button
+                        className="button button-primary"
+                        type="button"
+                        onClick={() => setAssigningComplaint(complaint)}
+                      >
+                        Assign complaint
+                      </button>
+                    )}
+                    
+                    {(complaint.status === 'Under Review' || complaint.status === 'Resolved') && (
+                      <button
+                        className="button button-outline"
+                        type="button"
+                        onClick={() => setViewingEvidenceComplaint(complaint)}
+                      >
+                        View evidence
+                      </button>
+                    )}
+
+                    {complaint.status === 'Under Review' && (
+                      <button
+                        className="button button-secondary"
+                        type="button"
+                        onClick={() => setStatus(complaint, 'Resolved')}
+                      >
+                        Verify & resolve
+                      </button>
+                    )}
                   </>
                 )}
-                {isContractor && (
+                {isContractor && (complaint.status === 'Assigned' || complaint.status === 'In Progress') && (
                   <button
                     className="button button-primary"
                     type="button"
-                    onClick={() => {
-                      setStatus(complaint, 'In Progress');
-                      showToast('Correction evidence submitted for officer review.');
-                    }}
+                    onClick={() => setSubmittingEvidenceComplaint(complaint)}
                   >
                     Submit correction evidence
                   </button>
@@ -276,6 +290,70 @@ function ComplaintsPage() {
               }}
             >
               Confirm Assignment
+            </button>
+          </div>
+        </div>
+      )}
+
+      {submittingEvidenceComplaint && (
+        <div className="modal-backdrop" onClick={() => setSubmittingEvidenceComplaint(null)}>
+          <div className="modal-card department-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="hazard-strip" />
+            <button type="button" className="drawer-close" onClick={() => setSubmittingEvidenceComplaint(null)}>×</button>
+            <span className="page-eyebrow">SUBMIT EVIDENCE</span>
+            <h2>Correction Evidence</h2>
+            <p>Upload a photo or provide remarks regarding the resolution of this complaint.</p>
+            
+            <div className="form-grid" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+              <label className="form-field full-field">
+                <span>Upload Photo Proof</span>
+                <input type="file" accept="image/*" />
+              </label>
+              <label className="form-field full-field">
+                <span>Remarks</span>
+                <textarea rows={3} placeholder="Describe the correction made..." />
+              </label>
+            </div>
+            
+            <button 
+              className="button button-primary" 
+              style={{ width: '100%' }} 
+              onClick={() => {
+                setStatus(submittingEvidenceComplaint, 'Under Review');
+                showToast('Correction evidence submitted for officer review.');
+                setSubmittingEvidenceComplaint(null);
+              }}
+            >
+              Submit Evidence
+            </button>
+          </div>
+        </div>
+      )}
+
+      {viewingEvidenceComplaint && (
+        <div className="modal-backdrop" onClick={() => setViewingEvidenceComplaint(null)}>
+          <div className="modal-card department-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="hazard-strip" />
+            <button type="button" className="drawer-close" onClick={() => setViewingEvidenceComplaint(null)}>×</button>
+            <span className="page-eyebrow">EVIDENCE REVIEW</span>
+            <h2>Submitted Correction Evidence</h2>
+            
+            <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+              <div style={{ width: '100%', height: '200px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', marginBottom: '1rem' }}>
+                <span style={{ color: '#64748b' }}>[ Photo Evidence Placeholder ]</span>
+              </div>
+              <label className="form-field full-field">
+                <span>Contractor Remarks</span>
+                <textarea rows={3} disabled value="Pothole has been repaired and leveled correctly as per instructions." />
+              </label>
+            </div>
+            
+            <button 
+              className="button button-primary" 
+              style={{ width: '100%' }} 
+              onClick={() => setViewingEvidenceComplaint(null)}
+            >
+              Close
             </button>
           </div>
         </div>
