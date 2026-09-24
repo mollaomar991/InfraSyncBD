@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+// only seen when there is 404 error
 function NotFoundPage() {
   return (
     <div className="not-found-page">
