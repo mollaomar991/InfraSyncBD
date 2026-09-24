@@ -4,6 +4,7 @@ import LoadingButton from '../components/LoadingButton';
 import { useApp } from '../context/AppContext';
 import styles from './AuthPages.module.css';
 
+// fixed login ui
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
