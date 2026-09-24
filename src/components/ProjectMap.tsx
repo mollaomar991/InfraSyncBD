@@ -15,6 +15,7 @@ import styles from './ProjectMap.module.css';
 interface ProjectMapProps {
   projects: Project[];
   compact?: boolean;
+  showConflicts?: boolean;
 }
 
 const dhakaCenter: [number, number] = [23.8103, 90.4125];
@@ -53,7 +54,7 @@ function MapCenterUpdater({ projects }: { projects: Project[] }) {
   return null;
 }
 
-function ProjectMap({ projects, compact = false }: ProjectMapProps) {
+function ProjectMap({ projects, compact = false, showConflicts = false }: ProjectMapProps) {
   const heightClass = compact ? `${styles.map} map-compact` : styles.map;
 
   return (
