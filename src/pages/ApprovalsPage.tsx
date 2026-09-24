@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import api from '../api/axiosClient';
 import type { Approval } from '../types';
 
+// fixed page ui
 function ApprovalsPage() {
   const [approvalItems, setApprovalItems] = useState<Approval[]>([]);
   const { currentUser, showToast, refreshProjects } = useApp();
