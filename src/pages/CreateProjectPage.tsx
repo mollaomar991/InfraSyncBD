@@ -86,6 +86,7 @@ function MapCenterUpdater({ center }: { center: [number, number] }) {
   return null;
 }
 
+// added ai model-1 ui
 function CreateProjectPage() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
