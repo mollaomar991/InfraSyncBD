@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import type { AccountStatus, Registration } from '../types';
 
 // fixed verify page ui
+// i fix this Verification page ui
 function VerificationPage() {
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const [processingId, setProcessingId] = useState('');
