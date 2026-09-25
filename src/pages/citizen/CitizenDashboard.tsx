@@ -6,6 +6,7 @@ import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import { useApp } from '../../context/AppContext';
 
+// Improved citizen dashboard cards and request status UI
 function CitizenDashboard() {
   const { currentUser, projects, complaints } = useApp();
   const personalComplaints = complaints.filter(
