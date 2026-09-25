@@ -9,6 +9,7 @@ import type { Project } from '../types';
 import { formatCurrency, roleLabel } from '../utils';
 
 // fixed project ui
+// Refined project list UI and improved project status display
 function ProjectsPage() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
