@@ -12,6 +12,7 @@ const emptyDepartment: Omit<Department, 'id' | 'status'> = {
   contact: '',
 };
 
+// Updated department management UI and action buttons
 function DepartmentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyDepartment);
