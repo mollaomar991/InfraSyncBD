@@ -3,6 +3,7 @@
 This project was extracted from the supplied InfraSync BD frontend and intentionally contains only two functional areas.
 
 ## Module 1 Completed Features
+
 - Login
 - Signup / registration
 - Super Admin account verification
@@ -24,7 +25,6 @@ This project was extracted from the supplied InfraSync BD frontend and intention
   - `GET /users`: Fetches all system users for Super Admin.
   - `GET /pending-verifications`: Fetches contractor/officer profiles awaiting approval.
   - `PUT /verify-user/:id`: Allows Super Admin to approve or reject pending accounts.
-
 
 ## 🛠️ How to Run Locally
 
@@ -59,12 +59,14 @@ Open a **new terminal window** in the root directory:
 npm install
 npm run dev
 ```
+
 ## 🔑 Test Credentials
 
 All test accounts use the password: **`admin123`**
 
-| Role                | Email                      | Status  |
-| ------------------- | -------------------------- | ------- |
+
+| Role                | Email                    | Status  |
+| --------------------- | -------------------------- | --------- |
 | Super Admin         | `admin@infrasync.gov.bd` | Active  |
 | Dept Officer (RHD)  | `salman@rhd.gov.bd`      | Active  |
 | Dept Officer (DNCC) | `farhana@dncc.gov.bd`    | Active  |
@@ -73,8 +75,8 @@ All test accounts use the password: **`admin123`**
 | Contractor          | `abc@builder.com`        | Pending |
 | Citizen             | `rahim@citizen.com`      | Active  |
 
-
 ## Module 2 Completed Features
+
 - Project list and project monitoring dashboard
 - Create project form with interactive GIS drawing tool
 - GIS project map with Google Hybrid satellite view
@@ -91,4 +93,4 @@ All test accounts use the password: **`admin123`**
 - **Project API (`/api/projects`)**:
   - `POST /`: Creates a new infrastructure project and saves polyline/point GIS coordinates via MySQL transactions.
   - `GET /`: Fetches all non-archived projects along with their GIS spatial coordinates and department details.
-  - `GET /:id`: Fetches details of a specific project by ID.
+  - `GET /:id`: Fetches details of a specific project.
