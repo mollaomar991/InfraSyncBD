@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { submitComplaint, getComplaints, resolveComplaint, updateComplaintStatus } from '../controllers/complaintController.js';
+import { submitComplaint, getComplaints, resolveComplaint, verifyComplaint, rejectComplaint, updateComplaintStatus } from '../controllers/complaintController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -20,6 +20,8 @@ const upload = multer({ storage: storage });
 router.post('/submit', authMiddleware, upload.single('photo'), submitComplaint);
 router.get('/', authMiddleware, getComplaints);
 router.post('/:id/resolve', authMiddleware, upload.single('photo'), resolveComplaint);
+router.put('/:id/verify', authMiddleware, verifyComplaint);
+router.put('/:id/reject', authMiddleware, rejectComplaint);
 router.put('/:id/status', authMiddleware, updateComplaintStatus);
 
 export default router;

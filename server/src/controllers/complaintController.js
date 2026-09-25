@@ -59,14 +59,50 @@ export const resolveComplaint = async (req, res) => {
             photoUrl = req.file.filename;
         }
 
+        // Contractor submits evidence → status goes to 'under_review' for officer to verify
         await pool.query(
-            `UPDATE complaints SET status = 'resolved', resolution_summary = ?, resolution_photo_url = ?, resolved_at = NOW() WHERE complaint_id = ?`,
-            [resolutionSummary, photoUrl, id]
+            `UPDATE complaints SET status = 'under_review', resolution_summary = ?, resolution_photo_url = ? WHERE complaint_ticket_no = ? OR complaint_id = ?`,
+            [resolutionSummary, photoUrl, id, id]
         );
 
-        res.json({ success: true, message: 'Complaint resolved' });
+        res.json({ success: true, message: 'Evidence submitted for officer review' });
     } catch (error) {
-        console.error('Error resolving complaint:', error);
+        console.error('Error submitting evidence:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Officer verifies evidence and resolves the complaint
+export const verifyComplaint = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await pool.query(
+            `UPDATE complaints SET status = 'resolved', resolved_at = NOW() WHERE complaint_ticket_no = ? OR complaint_id = ?`,
+            [id, id]
+        );
+
+        res.json({ success: true, message: 'Complaint verified and resolved' });
+    } catch (error) {
+        console.error('Error verifying complaint:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Officer rejects evidence → status goes back to 'assigned' so contractor can re-submit
+export const rejectComplaint = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rejectionReason } = req.body;
+
+        await pool.query(
+            `UPDATE complaints SET status = 'assigned', resolution_summary = NULL, resolution_photo_url = NULL WHERE complaint_ticket_no = ? OR complaint_id = ?`,
+            [id, id]
+        );
+
+        res.json({ success: true, message: 'Evidence rejected, sent back to contractor' });
+    } catch (error) {
+        console.error('Error rejecting complaint:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -78,6 +114,7 @@ export const updateComplaintStatus = async (req, res) => {
         let dbStatus = 'submitted';
         if (status === 'Assigned') dbStatus = 'assigned';
         else if (status === 'In Progress') dbStatus = 'in_progress';
+        else if (status === 'Under Review') dbStatus = 'under_review';
         else if (status === 'Resolved') dbStatus = 'resolved';
         else if (status === 'Closed') dbStatus = 'closed';
 

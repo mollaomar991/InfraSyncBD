@@ -1,10 +1,59 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 import api from '../api/axiosClient';
+
+function EvidenceSubmitModal({ complaint, onClose, onSubmit }: {
+  complaint: any;
+  onClose: () => void;
+  onSubmit: (file: File | null, remarks: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [remarks, setRemarks] = useState('');
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-card department-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+        <div className="hazard-strip" />
+        <button type="button" className="drawer-close" onClick={onClose}>×</button>
+        <span className="page-eyebrow">SUBMIT EVIDENCE</span>
+        <h2>Correction Evidence</h2>
+        <p>Upload a photo or provide remarks regarding the resolution of this complaint.</p>
+        
+        <div className="form-grid" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+          <label className="form-field full-field">
+            <span>Upload Photo Proof</span>
+            <input type="file" accept="image/*" ref={fileRef} />
+          </label>
+          <label className="form-field full-field">
+            <span>Remarks *</span>
+            <textarea 
+              rows={3} 
+              placeholder="Describe the correction made..." 
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+            />
+          </label>
+        </div>
+        
+        <button 
+          className="button button-primary" 
+          style={{ width: '100%' }}
+          disabled={!remarks.trim()}
+          onClick={() => {
+            const file = fileRef.current?.files?.[0] || null;
+            onSubmit(file, remarks);
+          }}
+        >
+          Submit Evidence
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function ComplaintsPage() {
   const [statusFilter, setStatusFilter] = useState('All');
@@ -37,7 +86,9 @@ function ComplaintsPage() {
           department: 'Public Works',
           assignedTo: c.assigned_contractor_name || (c.assigned_contractor_id ? 'Contractor' : 'Unassigned'),
           priority: 'Medium',
-          submittedDate: new Date(c.created_at).toLocaleDateString()
+          submittedDate: new Date(c.created_at).toLocaleDateString(),
+          resolutionSummary: c.resolution_summary || '',
+          resolutionPhoto: c.resolution_photo_url || '',
         })));
       }
     } catch (e) {
@@ -52,8 +103,8 @@ function ComplaintsPage() {
         : currentUser.role === 'contractor'
           ? apiComplaints.filter(
               (complaint) =>
-                complaint.assignedTo === currentUser.organization ||
-                complaint.assignedTo === 'Delta Infrastructure Ltd.',
+                complaint.assignedTo === currentUser.organization &&
+                complaint.assignedTo !== 'Unassigned',
             )
           : apiComplaints;
 
@@ -71,12 +122,60 @@ function ComplaintsPage() {
     try {
        const res = await api.put(`/complaints/${complaint.id}/status`, { status, assignedContractorName });
        if (res.data.success) {
-         setApiComplaints((current) => current.map(c => c.id === complaint.id ? { ...c, status, assignedTo: assignedContractorName || c.assignedTo } : c));
          showToast(`Status updated to ${status}`);
+         fetchComplaints();
        }
     } catch(e) {
        console.error(e);
        showToast('Failed to update status', 'error');
+    }
+  }
+
+  // Contractor submits evidence (file + remarks) to backend
+  async function submitEvidence(complaint: any, file: File | null, remarks: string) {
+    try {
+      const formData = new FormData();
+      if (file) formData.append('photo', file);
+      formData.append('resolutionSummary', remarks);
+
+      const res = await api.post(`/complaints/${complaint.id}/resolve`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        showToast('Correction evidence submitted for officer review.');
+        fetchComplaints();
+      }
+    } catch(e) {
+      console.error(e);
+      showToast('Failed to submit evidence', 'error');
+    }
+  }
+
+  // Officer verifies and resolves complaint
+  async function verifyAndResolve(complaint: any) {
+    try {
+      const res = await api.put(`/complaints/${complaint.id}/verify`);
+      if (res.data.success) {
+        showToast('Complaint verified and resolved!');
+        fetchComplaints();
+      }
+    } catch(e) {
+      console.error(e);
+      showToast('Failed to verify complaint', 'error');
+    }
+  }
+
+  // Officer rejects evidence, sends back to contractor
+  async function rejectEvidence(complaint: any) {
+    try {
+      const res = await api.put(`/complaints/${complaint.id}/reject`);
+      if (res.data.success) {
+        showToast('Evidence rejected, sent back to contractor for re-submission.');
+        fetchComplaints();
+      }
+    } catch(e) {
+      console.error(e);
+      showToast('Failed to reject evidence', 'error');
     }
   }
 
@@ -205,13 +304,23 @@ function ComplaintsPage() {
                     )}
 
                     {complaint.status === 'Under Review' && (
-                      <button
-                        className="button button-secondary"
-                        type="button"
-                        onClick={() => setStatus(complaint, 'Resolved')}
-                      >
-                        Verify & resolve
-                      </button>
+                      <>
+                        <button
+                          className="button button-secondary"
+                          type="button"
+                          onClick={() => verifyAndResolve(complaint)}
+                        >
+                          ✓ Verify & resolve
+                        </button>
+                        <button
+                          className="button button-outline"
+                          type="button"
+                          style={{ borderColor: '#ef4444', color: '#ef4444' }}
+                          onClick={() => rejectEvidence(complaint)}
+                        >
+                          ✗ Reject & send back
+                        </button>
+                      </>
                     )}
                   </>
                 )}
@@ -296,38 +405,14 @@ function ComplaintsPage() {
       )}
 
       {submittingEvidenceComplaint && (
-        <div className="modal-backdrop" onClick={() => setSubmittingEvidenceComplaint(null)}>
-          <div className="modal-card department-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-            <div className="hazard-strip" />
-            <button type="button" className="drawer-close" onClick={() => setSubmittingEvidenceComplaint(null)}>×</button>
-            <span className="page-eyebrow">SUBMIT EVIDENCE</span>
-            <h2>Correction Evidence</h2>
-            <p>Upload a photo or provide remarks regarding the resolution of this complaint.</p>
-            
-            <div className="form-grid" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
-              <label className="form-field full-field">
-                <span>Upload Photo Proof</span>
-                <input type="file" accept="image/*" />
-              </label>
-              <label className="form-field full-field">
-                <span>Remarks</span>
-                <textarea rows={3} placeholder="Describe the correction made..." />
-              </label>
-            </div>
-            
-            <button 
-              className="button button-primary" 
-              style={{ width: '100%' }} 
-              onClick={() => {
-                setStatus(submittingEvidenceComplaint, 'Under Review');
-                showToast('Correction evidence submitted for officer review.');
-                setSubmittingEvidenceComplaint(null);
-              }}
-            >
-              Submit Evidence
-            </button>
-          </div>
-        </div>
+        <EvidenceSubmitModal
+          complaint={submittingEvidenceComplaint}
+          onClose={() => setSubmittingEvidenceComplaint(null)}
+          onSubmit={(file, remarks) => {
+            submitEvidence(submittingEvidenceComplaint, file, remarks);
+            setSubmittingEvidenceComplaint(null);
+          }}
+        />
       )}
 
       {viewingEvidenceComplaint && (
@@ -339,12 +424,20 @@ function ComplaintsPage() {
             <h2>Submitted Correction Evidence</h2>
             
             <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
-              <div style={{ width: '100%', height: '200px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', marginBottom: '1rem' }}>
-                <span style={{ color: '#64748b' }}>[ Photo Evidence Placeholder ]</span>
-              </div>
+              {viewingEvidenceComplaint.resolutionPhoto ? (
+                <img 
+                  src={`http://localhost:5000/uploads/${viewingEvidenceComplaint.resolutionPhoto}`} 
+                  alt="Evidence" 
+                  style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '8px', marginBottom: '1rem' }} 
+                />
+              ) : (
+                <div style={{ width: '100%', height: '200px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', marginBottom: '1rem' }}>
+                  <span style={{ color: '#64748b' }}>No photo evidence uploaded</span>
+                </div>
+              )}
               <label className="form-field full-field">
                 <span>Contractor Remarks</span>
-                <textarea rows={3} disabled value="Pothole has been repaired and leveled correctly as per instructions." />
+                <textarea rows={3} disabled value={viewingEvidenceComplaint.resolutionSummary || 'No remarks provided.'} />
               </label>
             </div>
             
