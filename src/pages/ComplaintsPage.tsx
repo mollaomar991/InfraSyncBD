@@ -55,6 +55,7 @@ function EvidenceSubmitModal({ complaint, onClose, onSubmit }: {
   );
 }
 
+// Updated complaints table UI and status controls
 function ComplaintsPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [apiComplaints, setApiComplaints] = useState<any[]>([]);
