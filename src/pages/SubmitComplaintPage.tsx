@@ -12,6 +12,7 @@ const initialForm = {
   description: '',
 };
 
+// Improved complaint submission form and input layout
 function SubmitComplaintPage() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
