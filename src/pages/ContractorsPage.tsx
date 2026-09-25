@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import api from '../api/axiosClient';
 import type { Contractor } from '../types';
 
+// Refined contractor list UI and verification actions
 function ContractorsPage() {
   const [contractorsList, setContractorsList] = useState<Contractor[]>([]);
   const [selectedContractorId, setSelectedContractorId] = useState('');
