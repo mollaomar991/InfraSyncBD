@@ -40,6 +40,7 @@ const initialInput = {
   brick_weight_kg: 3,
 };
 
+// ui: adjust estimator controls and calculation summary
 function MaterialEstimatorPage() {
   const { currentUser, projects } = useApp();
   const [selectedProjectId, setSelectedProjectId] = useState('');
