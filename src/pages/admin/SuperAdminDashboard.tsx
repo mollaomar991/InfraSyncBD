@@ -6,6 +6,7 @@ import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import { useApp } from '../../context/AppContext';
 
+// Refined Super Admin dashboard cards and verification UI
 function SuperAdminDashboard() {
   const { users, projects, complaints, registrations, approvals, conflicts, contractors } = useApp();
   const delayedProjects = projects.filter(
