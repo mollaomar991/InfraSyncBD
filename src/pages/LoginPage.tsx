@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext';
 import styles from './AuthPages.module.css';
 
 // fixed login ui
+// i fix the login input form
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
