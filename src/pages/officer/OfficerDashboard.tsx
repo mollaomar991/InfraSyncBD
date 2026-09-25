@@ -8,6 +8,8 @@ import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils';
 
 // fixed officer dashboard divs
+// improve officer dashboard workflow elements
+// also fix officer dashboard navigation and overview
 function OfficerDashboard() {
   const { currentUser, projects, complaints, approvals, conflicts, inspections } = useApp();
   const departmentProjects = projects.filter(
