@@ -7,6 +7,7 @@ import StatusBadge from '../../components/StatusBadge';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils';
 
+// Updated contractor dashboard layout and project action UI
 function ContractorDashboard() {
   const { currentUser, projects, complaints, inspections } = useApp();
   const assignedProjects = projects.filter(
