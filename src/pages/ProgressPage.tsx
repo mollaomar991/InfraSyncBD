@@ -6,6 +6,7 @@ import ProgressBar from '../components/ProgressBar';
 import StatusBadge from '../components/StatusBadge';
 import { useApp } from '../context/AppContext';
 
+// Improved project progress indicators and page layout
 function ProgressPage() {
   const { currentUser, projects, eligibleProjects, updateProjectProgress, showToast } = useApp();
   const [selectedProjectId, setSelectedProjectId] = useState('');
